@@ -4,10 +4,13 @@ class Noise:
         Args:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
+        self.check_noise_params(noise_params)
         pass
     
-    def check_noise_params(self):
+    def check_noise_params(self, noise_params):
         '''Check if noise parameters are valid for noise class
+        Args:
+            noise_params: dict, noise parameters
         Returns:
             bool, True if noise parameters are valid
         '''
@@ -22,7 +25,7 @@ class Noise:
         '''
         raise NotImplementedError
     
-    def find_posterior(text1, text2):
+    def find_posterior(self, text1, text2):
         '''Find the posterior MLE estimate of self.noise_params given text1 and text2
         Args:
             text1: str, text 1

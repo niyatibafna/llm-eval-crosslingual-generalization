@@ -5,7 +5,7 @@ class Noise:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
         self.check_noise_params(noise_params)
-        pass
+        
     
     def check_noise_params(self, noise_params):
         '''Check if noise parameters are valid for noise class

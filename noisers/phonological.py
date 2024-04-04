@@ -7,11 +7,10 @@ class PhonologicalNoiser(Noise):
         Args:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
-        # super().__init__(noise_params)
-        self.check_noise_params(noise_params)
+        super().__init__(noise_params)
 
         if 'theta_1' in noise_params:
-            self.theta_1 = noise_params['theta_1']
+            self.theta_1 = float(noise_params['theta_1'])
             noise_params.pop('theta_1')
 
         for key in noise_params:
@@ -24,7 +23,7 @@ class PhonologicalNoiser(Noise):
         '''
         if 'theta_1' not in noise_params:
             raise ValueError("Missing noise parameter for PhonologicalNoiser: theta_1")
-        return True
+
 
     def apply_noise(self, input):
         '''Apply phonological noise to input
@@ -39,7 +38,7 @@ class PhonologicalNoiser(Noise):
         #     return input[1:]
 
         # TODO: Function should not affect certain things, like the tokens "Question:", "Choices:", "Answer:
-        input = "NOISE MARK " + input
+        # input = "NOISE MARK " + input
         return input
 
     

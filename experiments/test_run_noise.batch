@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#SBATCH --job-name=test_noise    # create a short name for your job
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=1               # total number of tasks across all nodes
+#SBATCH --cpus-per-task=3       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu          # Name of the partition
+#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=4                # Total number of gpus
+#SBATCH --mem=100G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=20:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --output=logs/test_noise.out   # output file name
+#SBATCH --error=logs/test_noise.out    # error file name
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+set -x # print out every command that's run with a +
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/10.2
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
+which python
+
+cd "/export/b08/nbafna1/projects/llm-xlingual-robustness/mlmm-evaluation/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+lang="hi"
+model_path="openai-community/gpt2" 
+tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+device=cuda
+
+tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+device=cuda
+
+all_noise_params="phonological:theta_1-0.5"
+output_base_path="/export/b08/nbafna1/projects/llm-xlingual-robustness/results/"
+
+mkdir -p ${output_base_path}
+
+python main.py \
+    --tasks=${tasks} \
+    --model_args pretrained=${model_path} \
+    --device=${device} \
+    --limit 10 \
+    --batch_size 8 \
+    --write_out \
+    --model_alias ${model_path}_${lang} \
+    --task_alias ${tasks} \
+    --all_noise_params ${all_noise_params} \
+    --output_base_path ${output_base_path}/noised_data \
+    --output_path ${output_base_path}/$lang~$tasks~$all_noise_params \
+

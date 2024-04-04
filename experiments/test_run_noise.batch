@@ -64,7 +64,7 @@ python main.py \
     --write_out \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \
-    --all_noise_params ${all_noise_params} \
+    --all_noise_params_str ${all_noise_params} \
     --output_base_path ${noised_data_outdir} \
     --output_path ${results_outdir}/$tasks.json \
     

@@ -7,6 +7,31 @@ class CharacterLevelNoiser(Noise):
     Required params: script, insert_theta, delete_theta, swap_theta
     Input format: {script: latin, insert_theta: 0.1, delete_theta: 0.1, swap_theta: 0.1}
     '''
+    @staticmethod
+    def identify_script(text):
+        '''Identify script of text
+        Args:
+            text: str, input text
+        Returns:
+            str, script of text
+        '''
+        # Identify script of text
+        char_set = {
+            "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)),
+            "devanagari": set(chr(i) for i in range(2304, 2432)),
+            "arabic": set(chr(i) for i in range(1536, 1792)),
+            "cyrillic": set(chr(i) for i in range(1024, 1280)),
+        }
+        # We'll find a majority script
+        script_counts = {script: 0 for script in char_set.keys()}
+        for char in text:
+            for script, char_set in char_set.items():
+                if char in char_set:
+                    script_counts[script] += 1
+
+        return max(script_counts, key=script_counts.get)
+
+
 
     def __init__(self, noise_params):
         '''Initialize noise with noise parameters
@@ -14,12 +39,13 @@ class CharacterLevelNoiser(Noise):
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
         self.class_name = "CharacterLevelNoiser"
-        self.required_keys = {"script", "insert_theta", "delete_theta", "swap_theta"}
+        self.required_keys = {"lang", "swap_theta"}
+        # self.required_keys = {"lang", "insert_theta", "delete_theta", "swap_theta"}
         self.check_noise_params(noise_params)
 
-        self.script = noise_params['script']
-        self.insert_theta = float(noise_params['insert_theta'])
-        self.delete_theta = float(noise_params['delete_theta'])
+        self.lang = noise_params['lang']
+        # self.insert_theta = float(noise_params['insert_theta'])
+        # self.delete_theta = float(noise_params['delete_theta'])
         self.swap_theta = float(noise_params['swap_theta'])
 
         # Initialize character set according to script
@@ -31,6 +57,14 @@ class CharacterLevelNoiser(Noise):
             set, character set
         '''
         # Get character set for script using Unicode ranges
+        lang_to_script = {
+            "en": "latin",
+            "de": "latin",
+            "hi": "devanagari",
+            "ar": "arabic",
+            "ru": "cyrillic",
+        }
+        script = lang_to_script[self.lang]
 
         char_set = {
             "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)),
@@ -38,7 +72,7 @@ class CharacterLevelNoiser(Noise):
             "arabic": set(chr(i) for i in range(1536, 1792)),
             "cyrillic": set(chr(i) for i in range(1024, 1280)),
         }
-        return char_set[self.script]
+        return char_set[script]
 
     def apply_noise(self, input):
         '''Apply noise to input

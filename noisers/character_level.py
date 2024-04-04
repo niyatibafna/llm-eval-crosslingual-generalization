@@ -13,19 +13,15 @@ class CharacterLevelNoiser(Noise):
         Args:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
+        self.class_name = "CharacterLevelNoiser"
         self.required_keys = {"script", "insert_theta", "delete_theta", "swap_theta"}
         self.check_noise_params(noise_params)
+
         self.script = noise_params['script']
         self.insert_theta = float(noise_params['insert_theta'])
         self.delete_theta = float(noise_params['delete_theta'])
         self.swap_theta = float(noise_params['swap_theta'])
 
-        for key in self.required_keys:
-            noise_params.pop(key)
-
-        for key in noise_params:
-            print(f"WARNING: Invalid parameter for CharacterSwap: {key}")
-        
         # Initialize character set according to script
         self.character_set = self.get_character_set()
     
@@ -43,16 +39,6 @@ class CharacterLevelNoiser(Noise):
             "cyrillic": set(chr(i) for i in range(1024, 1280)),
         }
         return char_set[self.script]
-    
-    def check_noise_params(self, noise_params):
-        '''Check if noise parameters are valid for noise class
-        Returns:
-            bool, True if noise parameters are valid
-        '''
-        for key in self.required_keys:
-            if key not in noise_params:
-                raise ValueError(f"Missing noise parameter for CharacterSwap: {key}")
-
 
     def apply_noise(self, input):
         '''Apply noise to input

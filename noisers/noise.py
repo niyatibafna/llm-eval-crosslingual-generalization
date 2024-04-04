@@ -4,6 +4,7 @@ class Noise:
         Args:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
+        self.class_name = "Noise"
         self.check_noise_params(noise_params)
         
     
@@ -14,7 +15,14 @@ class Noise:
         Returns:
             bool, True if noise parameters are valid
         '''
-        raise NotImplementedError
+        for key in self.required_keys:
+            if key not in noise_params:
+                raise ValueError(f"Missing noise parameter for {self.class_name}: {key}")
+        for key in noise_params:
+            if key not in self.required_keys:
+                print(f"WARNING: Invalid parameter for {self.class_name}: {key}")
+        
+
 
     def apply_noise(self, input):
         '''Apply noise to input

@@ -7,24 +7,13 @@ class PhonologicalNoiser(Noise):
         Args:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
-        super().__init__(noise_params)
+        self.class_name = "PhonologicalNoiser"
+        self.required_keys = {"theta_1"}
+        self.check_noise_params(noise_params)
+        
+        self.theta_1 = float(noise_params['theta_1'])
 
-        if 'theta_1' in noise_params:
-            self.theta_1 = float(noise_params['theta_1'])
-            noise_params.pop('theta_1')
-
-        for key in noise_params:
-            print(f"WARNING: Invalid parameter for PhonologicalNoiser: {key}")
     
-    def check_noise_params(self, noise_params):
-        '''Check if noise parameters are valid for phonological noiser
-        Returns:
-            bool, True if noise parameters are valid
-        '''
-        if 'theta_1' not in noise_params:
-            raise ValueError("Missing noise parameter for PhonologicalNoiser: theta_1")
-
-
     def apply_noise(self, input):
         '''Apply phonological noise to input
         Args:

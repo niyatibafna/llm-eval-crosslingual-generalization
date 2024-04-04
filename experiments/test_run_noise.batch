@@ -62,5 +62,5 @@ python main.py \
     --task_alias ${tasks} \
     --all_noise_params ${all_noise_params} \
     --output_base_path ${output_base_path}/noised_data \
-    --output_path ${output_base_path}/$lang~$tasks~$all_noise_params \
+    --output_path ${output_base_path}/$lang~$tasks.json \
 

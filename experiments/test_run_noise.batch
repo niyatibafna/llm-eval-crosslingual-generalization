@@ -46,10 +46,14 @@ device=cuda
 tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
 device=cuda
 
-all_noise_params="phonological:theta_1-0.5"
-output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/results/"
-
+all_noise_params="phonological:theta_1=0.5,theta_2=0.2;character_level:script=devanagari,insert_theta=0.1,delete_theta=0.1,swap_theta=0.1"
+output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
 mkdir -p ${output_base_path}
+noised_data_outdir="$output_base_path/noised_data/$lang/$all_noise_params/"
+mkdir -p ${noised_data_outdir}
+results_outdir="$output_base_path/results/$lang/"
+mkdir -p ${results_outdir}
+
 
 python main.py \
     --tasks=${tasks} \
@@ -61,6 +65,10 @@ python main.py \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \
     --all_noise_params ${all_noise_params} \
-    --output_base_path ${output_base_path}/noised_data \
-    --output_path ${output_base_path}/$lang~$tasks.json \
+    --output_base_path ${noised_data_outdir} \
+    --output_path ${results_outdir}/$tasks.json \
+    
 
+# --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,
+# the filename is automatically generated as task_lang_write_out.json
+# --output_path is the file where the results JSON will be stored for the entire run, with the noise params as a JSON key

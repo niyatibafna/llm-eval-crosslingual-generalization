@@ -1,0 +1,6 @@
+results/noised_data/*
+*pyc
+results/*
+*.log
+*.out
+

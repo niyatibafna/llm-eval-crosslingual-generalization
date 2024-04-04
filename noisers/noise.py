@@ -2,9 +2,9 @@ class Noise:
     def __init__(self, noise_params):
         '''Initialize noise with noise parameters
         Args:
-            noise_params: dict, noise parameters, like {phon: {theta_1: 0.5}}
+            noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
-        self.noise_params = noise_params
+        pass
     
     def check_noise_params(self):
         '''Check if noise parameters are valid for noise class

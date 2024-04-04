@@ -11,7 +11,7 @@ class PhonologicalNoiser(Noise):
         self.check_noise_params(noise_params)
 
         if 'theta_1' in noise_params:
-            self.theta_1 = self.noise_params['theta_1']
+            self.theta_1 = noise_params['theta_1']
             noise_params.pop('theta_1')
 
         for key in noise_params:

@@ -16,3 +16,10 @@ for input in inputs:
     print(f"Noised: {noised}")
     print()
 
+# import sys
+# sys.path.append("/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/lm_eval/")
+# sys.path.append("/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/")
+# from tasks.hellaswag import HellaSwag
+
+# task = HellaSwag()
+# print(task.NUM_FEW_SHOT)

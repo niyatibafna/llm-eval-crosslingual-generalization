@@ -51,9 +51,6 @@ model_path="openai-community/gpt2"
 tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
 device=cuda
 
-tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-device=cuda
-
 all_noise_params="character_level:lang=${lang},swap_theta=${theta}"
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
 mkdir -p ${output_base_path}
@@ -62,13 +59,12 @@ mkdir -p ${noised_data_outdir}
 results_outdir="$output_base_path/results/$lang/"
 mkdir -p ${results_outdir}
 
-
+export TOKENIZERS_PARALLELISM=true
 python main.py \
     --tasks=${tasks} \
     --model_args pretrained=${model_path} \
     --device=${device} \
-    --limit 10 \
-    --batch_size 8 \
+    --batch_size 1 \
     --write_out \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \

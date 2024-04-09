@@ -5,6 +5,7 @@ class Noise:
             noise_params: dict, noise parameters, like {theta_1: 0.5}
         '''
         self.class_name = "Noise"
+        self.required_keys = {}
         self.check_noise_params(noise_params)
         
     

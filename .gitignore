@@ -6,3 +6,4 @@ results/*
 
 outputs/*
 outputs_test/*
+noisers/vocab.txt

@@ -1,11 +1,14 @@
 from phonological import PhonologicalNoiser
 from character_level import CharacterLevelNoiser
+from lexical import GlobalLexicalNoiser
 
 from collections import defaultdict
+import regex
 
 NOISE_REGISTRY = {
     'phonological': PhonologicalNoiser,
-    'character_level': CharacterLevelNoiser
+    'character_level': CharacterLevelNoiser,
+    'lexical': GlobalLexicalNoiser,
 }
 
 def parse_noise_params(noise_params_str):
@@ -18,16 +21,33 @@ def parse_noise_params(noise_params_str):
     
     '''
     all_noise_params = defaultdict(dict)
-    
+
+    # We will ignore anything enclosed in <>
+    ## Extract text enclosed in <>
+    text_files = regex.findall(r'<(.*?)>', noise_params_str)
+    ## Replace text enclosed in <> with a placeholder
+    noise_params_str = regex.sub(r'<(.*?)>', "<placeholder>", noise_params_str)
+
+    print(noise_params_str)
+
     all_noise_type_params = noise_params_str.split(";")
     for noise_type_params in all_noise_type_params: # phonological:theta_1=0.5,theta_2=0.2
-        noise_type = noise_type_params.split(":")[0] # phonological
-        noise_type_params = noise_type_params.split(":")[1] # theta_1=0.5,theta_2=0.2
+        noise_type = noise_type_params.split("-")[0] # phonological
+        noise_type_params = noise_type_params.split("-")[1] # theta_1=0.5,theta_2=0.2
         noise_type_params = noise_type_params.split(",") # [theta_1=0.5,theta_2=0.2]
         for noise_param in noise_type_params:
             param_name = noise_param.split("=")[0]
             param_value = noise_param.split("=")[1]
-            all_noise_params[noise_type][param_name] = param_value
+            print(param_name, param_value)
+            # If param_value is a placeholder, replace it with the actual text_file
+            if param_value == "<placeholder>":
+                all_noise_params[noise_type][param_name] = text_files.pop(0)
+            else:
+                try:
+                    all_noise_params[noise_type][param_name] = float(param_value)
+                except:
+                    all_noise_params[noise_type][param_name] = param_value
+
     return all_noise_params
     
 

@@ -207,6 +207,13 @@ class GlobalLexicalNoiser(Noise):
         total1 = sum(vocab1.values())
         total2 = sum(vocab2.values())
         for word in vocab1:
+
+            if vocab1[word] >= 10 and vocab2[word] <= 2: # clear case
+                switched_out += 1
+                continue
+            
+            # In the case that word in rare in text1, we can't really say that it was switched out if it is also rare in text2
+            # We use the chi-squared test to determine whether the word is significantly rarer in text2 than in text1
             expected = vocab1[word] 
             observed = (vocab2[word] / total2 )* total1 
             # We need to scale the observed frequency to the size of text1 because 
@@ -214,8 +221,9 @@ class GlobalLexicalNoiser(Noise):
 
             # Chi-squared test
             res = chisquare(f_exp=[expected, total1 - expected], f_obs=[observed, total1 - observed])
-            if res.pvalue < 0.05:
+            if res.pvalue < 0.05 and vocab1[word] > vocab2[word]: # significantly different, and word is rarer in text2
                 switched_out += 1
+
         mle_est_theta_global = switched_out / len(vocab1)
 
         # OR we can use the absolute frequencies

@@ -4,6 +4,7 @@ from collections import defaultdict, Counter
 import numpy as np
 import json
 
+from scipy.stats import chisquare
 
 class GlobalLexicalNoiser(Noise):
     '''
@@ -40,7 +41,7 @@ class GlobalLexicalNoiser(Noise):
     def get_vocab(text_file):
         '''Initialize vocabulary from vocab file'''
         print(f"Initializing vocabulary from {text_file}...")
-        vocab = set()
+        vocab = defaultdict(lambda: 0)
         for line in open(text_file):
             words = line.strip().split()
             for word in words:
@@ -49,12 +50,9 @@ class GlobalLexicalNoiser(Noise):
                 # If word has non-alphabetic characters, skip
                 if not word.isalpha():
                     continue
-                vocab.add(word.lower())
+                vocab[word.lower()] += 1
         print(f"Finished initializing vocabulary from {text_file}!")
 
-        with open("vocab.txt", "w") as f:
-            for word in vocab:
-                f.write(word + "\n")
         return vocab
 
     def train_chargram_model(self, chargram_length=3):
@@ -182,6 +180,9 @@ class GlobalLexicalNoiser(Noise):
 
     def record_noiser_artifacts(self):
         '''Record vocab map, number of words switched out'''
+        with open("vocab.txt", "w") as f:
+            for word in self.vocab:
+                f.write(word + "\n")
         raise NotImplementedError
 
 
@@ -191,7 +192,38 @@ class GlobalLexicalNoiser(Noise):
             text1: str, text 1
             text2: str, text 2
         Returns:
-            MLE estimate of self.noise_params (dict)
+            MLE estimate of self.theta_global
         '''
-        raise NotImplementedError
+        vocab1 = self.get_vocab(text1)
+        vocab2 = self.get_vocab(text2)
+
+        # Find the number of words switched out
+        switched_out = len(vocab1 - vocab2)
+        mle_est_theta_global = switched_out / len(vocab1)
+
+        # OR we can do the following:
+        ## For each word, see whether its frequencies are significantly different in text1 and text2
+        switched_out = 0
+        for word in vocab1:
+            expected = vocab1[word]
+            observed = vocab2[word]
+
+            # Chi-squared test
+            res = chisquare(f_exp=[expected], f_obs=[observed])
+            if res.pvalue < 0.05:
+                switched_out += 1
+        mle_est_theta_global = switched_out / len(vocab1)
+
+        # OR we can use the absolute frequencies
+        switched_out = total = 0
+        for word in vocab1:
+            if vocab1[word] <= 3:
+                continue
+            total += 1
+            if vocab2[word] <= 3:
+                switched_out += 1
+        mle_est_theta_global = switched_out / total
+        
+        return mle_est_theta_global
+
 

@@ -1,0 +1,60 @@
+'''
+This code takes in a conllu UD file and finds the most frequent tag for each word in the file.
+For each word, it then checks if the tag is in the closed_class_tags list.
+Finally, we create a JSON file with the wordlist per closed_class tag.
+'''
+import conllu
+import sys
+from collections import defaultdict
+import json
+
+files = {
+    "deu":"/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_German-HDT/de_hdt-ud-train.conllu",
+    "hin": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu",
+    "ara": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Arabic-PADT/ar_padt-ud-train.conllu",
+    "ind": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Indonesian-GSD/id_gsd-ud-train.conllu",
+    "eng": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_English-EWT/en_ewt-ud-train.conllu",
+    "rus": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu",
+    "esp": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Spanish-GSD/es_gsd-ud-train.conllu",
+
+}
+
+OUTDIR = "ud_closed_class_wordlists/"
+outpath_paths ={
+    "hin": f"{OUTDIR}/hi_hdtb-ud-train.json",
+    "deu": f"{OUTDIR}/de_hdt-ud-train.json",
+    "ara": f"{OUTDIR}/ar_padt-ud-train.json",
+    "ind": f"{OUTDIR}/id_gsd-ud-train.json",
+    "eng": f"{OUTDIR}/en_ewt-ud-train.json",
+    "rus": f"{OUTDIR}/ru_syntagrus-ud-train.json",
+    "esp": f"{OUTDIR}/es_gsd-ud-train.json",
+
+}
+
+closed_class_tags = ['ADP', 'AUX', 'CCONJ', 'DET', 'PART', 'PRON', 'SCONJ']
+
+
+def read_conllu(filename):
+    conllu_file = open(filename, "r", encoding="utf-8")
+    conllu_data = conllu_file.read()
+    conllu_sentences = conllu.parse(conllu_data)
+    return conllu_sentences
+
+if __name__ == "__main__":
+    for lang, file in files.items():
+        word2tags = defaultdict(lambda: defaultdict(lambda: 0))
+        sentences = read_conllu(file)
+        for sentence in sentences:
+            for token in sentence:
+                word = token["form"].lower()
+                tag = token["upos"]
+                word2tags[word][tag] += 1
+
+        tag2wordlist = defaultdict(lambda: [])
+        for word in word2tags:
+            tag = max(word2tags[word], key=word2tags[word].get)
+            if tag in closed_class_tags:
+                tag2wordlist[tag].append(word)
+        
+        with open(outpath_paths[lang], "w", encoding="utf-8") as out:
+            json.dump(tag2wordlist, out, indent=2, ensure_ascii=False)

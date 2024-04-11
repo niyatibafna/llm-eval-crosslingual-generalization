@@ -204,12 +204,16 @@ class GlobalLexicalNoiser(Noise):
         # OR we can do the following:
         ## For each word, see whether its frequencies are significantly different in text1 and text2
         switched_out = 0
+        total1 = sum(vocab1.values())
+        total2 = sum(vocab2.values())
         for word in vocab1:
-            expected = vocab1[word]
-            observed = vocab2[word]
+            expected = vocab1[word] 
+            observed = (vocab2[word] / total2 )* total1 
+            # We need to scale the observed frequency to the size of text1 because 
+            # the totals over categories need to be the same for the chi-squared test
 
             # Chi-squared test
-            res = chisquare(f_exp=[expected], f_obs=[observed])
+            res = chisquare(f_exp=[expected, total1 - expected], f_obs=[observed, total1 - observed])
             if res.pvalue < 0.05:
                 switched_out += 1
         mle_est_theta_global = switched_out / len(vocab1)

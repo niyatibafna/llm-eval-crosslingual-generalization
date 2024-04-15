@@ -20,6 +20,9 @@ def parse_noise_params(noise_params_str):
         dict, noise parameters, like {phonological: {theta_1: 0.5}}
     
     '''
+    if noise_params_str == "":
+        return defaultdict(dict)
+
     all_noise_params = defaultdict(dict)
 
     # We will ignore anything enclosed in <>
@@ -59,6 +62,9 @@ def get_noisers(all_noise_params):
     Returns:
         noise_classes: list, list of noiser class objects
     '''
+    if not all_noise_params:
+        return list()
+
     # Initialize noiser objects from noise type classes
     noise_classes = list()
     for noise_type, noise_params in all_noise_params.items():
@@ -80,3 +86,11 @@ def apply_noisers(input, noise_classes, verbose = False):
             print(f"Applying noise: {noiser}")
         input = noiser.apply_noise(input)
     return input
+
+def record_noiser_artifacts(noise_classes):
+    '''Save noiser artifacts to output file
+    Args:
+        noise_classes: list, list of noisers
+    '''
+    for noiser in noise_classes:
+        noiser.record_noiser_artifacts()

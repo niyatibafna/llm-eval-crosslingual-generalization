@@ -19,7 +19,7 @@ files = {
 
 }
 
-OUTDIR = "ud_closed_class_wordlists/"
+OUTDIR = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/utils/ud_closed_class_wordlists"
 outpath_paths ={
     "hin": f"{OUTDIR}/hi_hdtb-ud-train.json",
     "deu": f"{OUTDIR}/de_hdt-ud-train.json",

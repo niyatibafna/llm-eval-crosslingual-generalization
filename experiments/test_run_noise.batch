@@ -1,17 +1,19 @@
 #!/bin/bash
 
 #SBATCH --job-name=test_noise    # create a short name for your job
-#SBATCH --nodes=1                # node count
-#SBATCH --ntasks=1               # total number of tasks across all nodes
+#SBATCH --nodes=3                # node count
+#SBATCH --ntasks=5               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu          # Name of the partition
-#SBATCH --gpus=1                # Total number of gpus
-#SBATCH --mem=10G                # Total memory allocated
-#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=5                # Total number of gpus
+#SBATCH --mem=50G                # Total memory allocated
+##SBATCH --nodelist=!c17       # Node is only available in gpu partition
+#SBATCH --exclude=c13
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
-#SBATCH --time=20:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --output=logs/test_noise.out   # output file name
-#SBATCH --error=logs/test_noise.out    # error file name
+#SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=1-5
+#SBATCH --output=logs/test_noise_%a.out   # output file name
+#SBATCH --error=logs/test_noise_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -47,14 +49,16 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-lang="de"
+langs=("de" "hi" "es" "ar" "ru")
+lang=${langs[$SLURM_ARRAY_TASK_ID-1]}
 model_path="openai-community/gpt2" 
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-tasks=wmt16-de-en
+# tasks=wmt16-de-en
+tasks="xnli_${lang}"
 device=cuda
-theta=0.01
+theta=0
 
-all_noise_params="character_level:lang=${lang},swap_theta=${theta}"
+all_noise_params="character_level-lang=$lang,swap_theta=$theta"
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs_test/"
 mkdir -p ${output_base_path}
 noised_data_outdir="$output_base_path/noised_data_test/$lang/$all_noise_params/"
@@ -67,7 +71,6 @@ python main.py \
     --tasks=${tasks} \
     --model_args pretrained=${model_path} \
     --device=${device} \
-    --limit 10 \
     --batch_size 8 \
     --write_out \
     --model_alias ${model_path}_${lang} \
@@ -75,6 +78,7 @@ python main.py \
     --all_noise_params_str ${all_noise_params} \
     --output_base_path ${noised_data_outdir} \
     --output_path ${results_outdir}/$tasks.json \
+    # --limit 10 \
     
 
 # --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,

@@ -1,55 +1,60 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-#$ -N test_trans
-#$ -wd /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation
-#$ -m e
-# #$ -t 4
-#$ -j y -o /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/experiments/qsub_logs/test_noise.log
+#SBATCH --job-name=test_noise    # create a short name for your job
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=1               # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu          # Name of the partition
+#SBATCH --gpus=1                # Total number of gpus
+#SBATCH --mem=10G                # Total memory allocated
+##SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=20:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --output=logs/test_noise_10-2.out   # output file name
+#SBATCH --error=logs/test_noise_10-2.out    # error file name
 
-# Fill out RAM/memory (same thing) request,
-# the number of GPUs you want,
-# and the hostnames of the machines for special GPU models.
-#$ -l ram_free=30G,mem_free=30G,gpu=1,hostname=!c08*&!c07*&!c04*&!c25*&c*
 
-# Submit to GPU queue
-#$ -q g.q
+echo "### Running $SLURM_JOB_NAME ###"
 
-source ~/.bashrc
-which python
+# print out every command that's run with a +
 
-conda deactivate
-conda activate test2
-which python
+nvidia-smi
 
-# Assign a free-GPU to your program (make sure -n matches the requested number of GPUs above)
-source /home/gqin2/scripts/acquire-gpu -n 1
+module purge
+module load conda
+conda --version
+module load cuda/10.2
+# module load cuda/12.1
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
 
 echo "HOSTNAME: $(hostname)"
 echo
 echo CUDA in ENV:
 env | grep CUDA
 echo
-echo SGE in ENV:
-env | grep SGE
+echo $CUDA_VISIBLE_DEVICES
 
-set -x # print out every command that's run with a +
-nvidia-smi
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
+which python
 
-
+set -x
 cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/"
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-lang="de"
+lang="deu"
 model_path="openai-community/gpt2" 
-# model_path="google/mt5-base"
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-# tasks=wmt16-de-en
-tasks=flores200-hin-eng
+tasks=wmt16-de-en
 device=cuda
 theta=0.01
 
-all_noise_params="character_level:lang=${lang},swap_theta=${theta}"
+all_noise_params="character_level-lang=deu,swap_theta=0.2"
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs_test/"
 mkdir -p ${output_base_path}
 noised_data_outdir="$output_base_path/noised_data_test/$lang/$all_noise_params/"

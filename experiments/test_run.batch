@@ -34,6 +34,7 @@ which python
 . "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
 which python
 
+set -x # print out every command that's run with a +
 cd "/export/b08/nbafna1/projects/llm-xlingual-robustness/mlmm-evaluation/"
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 

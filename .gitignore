@@ -8,3 +8,4 @@ outputs/*
 outputs_test/*
 noisers/vocab.txt
 noisers/utils/ud_closed_class_wordlists/*
+noiser_artifacts/*

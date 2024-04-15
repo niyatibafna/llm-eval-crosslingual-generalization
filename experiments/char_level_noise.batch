@@ -5,7 +5,7 @@
 #SBATCH --ntasks=10               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu          # Name of the partition
-##SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --nodelist=octopod       # Node is only available in gpu partition
 #SBATCH --gpus=1                # Total number of gpus
 #SBATCH --mem=100G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
@@ -16,6 +16,12 @@
 
 
 echo "### Running $SLURM_JOB_NAME ###"
+
+echo "HOSTNAME: $(hostname)"
+echo
+echo CUDA in ENV:
+env | grep CUDA
+echo
 
 set -x # print out every command that's run with a +
 

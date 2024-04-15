@@ -58,11 +58,18 @@ class CharacterLevelNoiser(Noise):
         '''
         # Get character set for script using Unicode ranges
         lang_to_script = {
+            "eng": "latin",
+            "deu": "latin",
+            "hin": "devanagari",
+            "ara": "arabic",
+            "rus": "cyrillic",
+            "esp": "latin",
             "en": "latin",
             "de": "latin",
             "hi": "devanagari",
             "ar": "arabic",
             "ru": "cyrillic",
+            "es": "latin",
         }
         script = lang_to_script[self.lang]
 

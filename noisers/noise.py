@@ -6,6 +6,7 @@ class Noise:
         '''
         self.class_name = "Noise"
         self.required_keys = {}
+        self.allowed_keys = {}
         self.check_noise_params(noise_params)
         
     
@@ -20,11 +21,9 @@ class Noise:
             if key not in noise_params:
                 raise ValueError(f"Missing noise parameter for {self.class_name}: {key}")
         for key in noise_params:
-            if key not in self.required_keys:
+            if key not in self.required_keys and key not in self.allowed_keys:
                 print(f"WARNING: Invalid parameter for {self.class_name}: {key}")
         
-
-
     def apply_noise(self, input):
         '''Apply noise to input
         Args:
@@ -33,6 +32,11 @@ class Noise:
             str, noised text
         '''
         raise NotImplementedError
+
+    def record_noiser_artifacts(self):
+        '''Save noiser artifacts to output file
+        '''
+        pass
     
     def find_posterior(self, text1, text2):
         '''Find the posterior MLE estimate of self.noise_params given text1 and text2

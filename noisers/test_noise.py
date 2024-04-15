@@ -1,5 +1,5 @@
 '''This file is for testing out various noise classes'''
-from main import parse_noise_params, get_noisers, apply_noisers
+from main import parse_noise_params, get_noisers, apply_noisers, record_noiser_artifacts
 
 # noise_specs = "phonological-theta_1=0.5,theta_2=0.2;character_level:script=devanagari,insert_theta=0.1,delete_theta=0.1,swap_theta=0.1"
 # all_noise_params = parse_noise_params(noise_specs)
@@ -18,8 +18,10 @@ from main import parse_noise_params, get_noisers, apply_noisers
 
 # Testing out lexical noiser with GlobalLexicalNoise
 
-read_file = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/de/character_level-lang=de,swap_theta=0.0/arc_de_write_out_info.json"
-noise_specs = f"lexical-theta_global=0.5,text_file=<{read_file}>"
+exp_key = "lexical-lang=deu,theta_content_global=0.5,theta_func_global=0.8"
+read_file = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/deu/character_level-lang=de,swap_theta=0.0/arc_de_write_out_info.json"
+output_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/{exp_key}"
+noise_specs = f"lexical-lang=deu,theta_content_global=0.5,theta_func_global=0.8,text_file=<{read_file}>,output_dir=<{output_file}>"
 all_noise_params = parse_noise_params(noise_specs)
 print(f"Noise Parameters: {all_noise_params}")
 
@@ -77,4 +79,5 @@ for input in inputs:
     noised = apply_noisers(input, noiser_classes, verbose=True)
     print(f"Noised: {noised}")
     print()
+    record_noiser_artifacts(noiser_classes)
 

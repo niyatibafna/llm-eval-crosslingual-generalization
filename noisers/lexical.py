@@ -7,6 +7,7 @@ import sys
 import os
 
 sys.path.append(os.getcwd())
+
 from utils.get_functional_words import OUTDIR, closed_class_tags
 from utils.get_functional_words import outpath_paths as ud_wordlists_paths
 
@@ -417,9 +418,11 @@ class GlobalLexicalNoiser(Noise):
                 theta_func_global: float, probability of switching out a function word with a non-word
             Also accepts:
                 chargram_length: int, character n-gram length
+                output_file: str, output directory
         '''
         self.class_name = "GlobalLexicalNoiser"
-        self.required_keys = {"lang", "text_file", "theta_content_global", "theta_func_global" }
+        self.required_keys = {"lang", "text_file", "theta_content_global", "theta_func_global"}
+        self.allowed_keys = {"chargram_length", "output_dir"}
         self.check_noise_params(noise_params)
 
         for key in noise_params:
@@ -431,8 +434,11 @@ class GlobalLexicalNoiser(Noise):
         # Initialize vocabulary
         self.vocab = self.get_vocab(self.text_file)
         self.chargram_models = self.train_chargram_model(self.chargram_length)
-        self.vocab_map = self.construct_new_vocab()
         self.tag2wordlist = self.get_tag2wordlist()
+        self.vocab_map = self.construct_new_vocab()
+
+        os.makedirs(self.output_dir, exist_ok=True)
+        
 
     @staticmethod
     def get_vocab(text_file):
@@ -545,6 +551,22 @@ class GlobalLexicalNoiser(Noise):
                 return True
         return False
 
+    def get_vocab_map_stats(self):
+        '''
+        Get stats of vocab map
+        '''
+        stats = dict()
+        stats["theta_content_global"] = self.theta_content_global
+        stats["theta_func_global"] = self.theta_func_global
+        stats["vocab_size"] = len(self.vocab)
+        stats["content_words"] = len([word for word in self.vocab if not self.is_word_functional(word)])
+        stats["func_words"] = len([word for word in self.vocab if self.is_word_functional(word)])
+        stats["content_words_noised_frac"] = round(len([word for word in self.vocab_map if not self.is_word_functional(word) \
+                                                 and self.vocab_map[word] != word]) / stats["content_words"], 2)
+        stats["func_words_noised_frac"] = round(len([word for word in self.vocab_map if self.is_word_functional(word)\
+                                               and self.vocab_map[word] != word])/stats["func_words"], 2)
+        return stats
+        
     def construct_new_vocab(self):
         '''
         With probability theta_global, switch out a word from the vocabulary with a non-word
@@ -565,6 +587,7 @@ class GlobalLexicalNoiser(Noise):
                 vocab_map[word] = new_word
             else:
                 vocab_map[word] = word
+        
         return vocab_map
 
     def apply_noise(self, input):
@@ -595,11 +618,13 @@ class GlobalLexicalNoiser(Noise):
 
     def record_noiser_artifacts(self):
         '''Record vocab map, number of words switched out'''
-        with open("vocab.txt", "w") as f:
-            for word in self.vocab:
-                f.write(word + "\n")
-        raise NotImplementedError
 
+        if hasattr(self, "output_dir"):
+            with open(f"{self.output_dir}/vocab_map.json", "w") as f:
+                json.dump(self.vocab_map, f, indent=2, ensure_ascii=False) 
+            stats = self.get_vocab_map_stats()
+            with open(f"{self.output_dir}/stats.json", "w") as f:
+                json.dump(stats, f, indent=2, ensure_ascii=False)
 
     def find_posterior(self, text1, text2):
         '''Find the posterior MLE estimate of self.noise_params given text1 and text2

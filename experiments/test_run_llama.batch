@@ -23,7 +23,7 @@ nvidia-smi
 module purge
 module load conda
 conda --version
-module load cuda/10.2
+module load cuda/12.1
 nvcc --version
 
 # Set your conda environment
@@ -31,7 +31,7 @@ source /home/$USER/.bashrc
 conda info --envs
 
 which python
-. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob
 which python
 
 set -x # print out every command that's run with a +

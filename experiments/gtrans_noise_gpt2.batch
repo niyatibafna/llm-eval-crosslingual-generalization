@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#SBATCH --job-name=trans_noise    # create a short name for your job
+#SBATCH --nodes=5                # node count
+#SBATCH --ntasks=12               # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu          # Name of the partition
+#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=12                # Total number of gpus
+#SBATCH --mem=50G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=5:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=0-11
+#SBATCH --output=logs/trans_noise_%a.out   # output file name
+#SBATCH --error=logs/trans_noise_%a.out    # error file name
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+echo "HOSTNAME: $(hostname)"
+echo
+echo CUDA in ENV:
+env | grep CUDA
+echo
+
+set -x # print out every command that's run with a +
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/10.2
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
+which python
+
+cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+### Source and target languages
+
+# Spanish:  *Catalan, Galician, Portuguese
+#   Hindi:   Assamese, *Bengali, Bhojpuri, Dhivehi,  Gujarati, *Marathi, Punjabi, Sindhi, Sinahala, Oriya, *Nepali, Urdu, Maithili
+#   Russian:   Belorussian, Bosnian, Bulgarian, *Croatian, Czech, Polish, *Slovak, Slovenian, *Serbian, *Ukrainian, Macedonian
+# Indonesian:    Tagalog, Cebuano, Malay, Malagasy, Maori, Ilocano, Javanese, Filipino, Hawaiian
+#   English:    ?Dutch, Frisian, Afrikaans,      (and possibly) Danish, German, Norwegian, Swedish, Icelandic
+
+
+src_tgt_pairs=("hi:bho" "hi:mai" "ru:be" "ru:cs" "ru:bg" "es:ca" "es:gl" "es:pt" "id:tl" "id:ceb" "en:af" "en:fy")
+src_tgt_pair=${src_tgt_pairs[$SLURM_ARRAY_TASK_ID]}
+src_lang=$(echo $src_tgt_pair | cut -d':' -f1)
+tgt_lang=$(echo $src_tgt_pair | cut -d':' -f2)
+lang=$src_lang
+
+echo "Running for $src_lang -> $tgt_lang"
+
+model_path="openai-community/gpt2" 
+model_key="gpt2"
+tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+device=cuda
+
+all_noise_params="gtrans-src=${src_lang},tgt=${tgt_lang}"
+output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
+mkdir -p ${output_base_path}
+noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/$all_noise_params/"
+mkdir -p ${noised_data_outdir}
+results_outdir="$output_base_path/results/$model/$lang/"
+mkdir -p ${results_outdir}
+
+export TOKENIZERS_PARALLELISM=true
+python main.py \
+    --tasks=${tasks} \
+    --model_args pretrained=${model_path} \
+    --device=${device} \
+    --batch_size 1 \
+    --write_out \
+    --model_alias ${model_path}_${lang} \
+    --task_alias ${tasks} \
+    --all_noise_params_str ${all_noise_params} \
+    --output_base_path ${noised_data_outdir} \
+    --output_path ${results_outdir}/$tasks.json \
+    --limit 500
+    
+
+# --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,
+# the filename is automatically generated as task_lang_write_out.json
+# --output_path is the file where the results JSON will be stored for the entire run, with the noise params as a JSON key

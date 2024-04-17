@@ -1,6 +1,21 @@
 from noise import Noise
 from googletrans import Translator
 
+### Google translate codes for the following languages:
+# Spanish:  *Catalan, Galician, Portuguese
+#   Hindi:   Assamese, *Bengali, Bhojpuri, Dhivehi,  Gujarati, *Marathi, Punjabi, Sindhi, Sinahala, Oriya, *Nepali, Urdu, Maithili
+#   Russian:   Belorussian, Bosnian, Bulgarian, *Croatian, Czech, Polish, *Slovak, Slovenian, *Serbian, *Ukrainian, Macedonian
+# Indonesian:    Tagalog, Cebuano, Malay, Malagasy, Maori, Ilocano, Javanese, Filipino, Hawaiian
+#   English:    ?Dutch, Frisian, Afrikaans,      (and possibly) Danish, German, Norwegian, Swedish, Icelandic
+
+# {Spanish: es, Hindi: hi, Russian: ru, Indonesian: id, English: en
+# Catalan: ca, Galician: gl, Portuguese: pt, Bengali: bn, Marathi: mr, Nepali: ne, Slovak: sk, Serbian: sr
+# Croatian: hr, Ukrainian: uk
+# }
+# https://cloud.google.com/translate/docs/languages
+
+
+
 class GoogleTranslateNoiser(Noise):
     def __init__(self, noise_params):
         '''Initialize noise with noise parameters

@@ -1,19 +1,21 @@
-from phonological import PhonologicalNoiser
+from phonological import GlobalPhonologicalNoiser
 from character_level import CharacterLevelNoiser
 from lexical import GlobalLexicalNoiser
+from google_translate import GoogleTranslateNoiser
 
 from collections import defaultdict
 import regex
 
 NOISE_REGISTRY = {
-    'phonological': PhonologicalNoiser,
+    'phonological': GlobalPhonologicalNoiser,
     'character_level': CharacterLevelNoiser,
     'lexical': GlobalLexicalNoiser,
+    'gtrans': GoogleTranslateNoiser,
 }
 
 def parse_noise_params(noise_params_str):
     '''
-    Parse noise parameters e.g. phonological:theta_1=0.5,theta_2=0.2;syntax:theta_2=0.5
+    Parse noise parameters e.g. phonological-theta_1=0.5,theta_2=0.2;syntax-theta_2=0.5
     Args:
         noise_params_str: str, noise parameters
     Returns:

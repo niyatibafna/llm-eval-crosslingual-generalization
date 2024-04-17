@@ -1,0 +1,69 @@
+#!/bin/bash
+
+#SBATCH --job-name=test_llama    # create a short name for your job
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=1               # total number of tasks across all nodes
+#SBATCH --cpus-per-task=3       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu-a100          # Name of the partition
+# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=1                # Total number of gpus
+#SBATCH --mem=100G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --output=logs/test.out   # output file name
+#SBATCH --error=logs/test.out    # error file name
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+set -x # print out every command that's run with a +
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/10.2
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob2
+which python
+
+set -x # print out every command that's run with a +
+cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+# Trying GPT3.5
+# export OPENAI_API_SECRET_KEY=""
+# model="gpt3"
+# model_path="gpt-3.5-turbo-0125"
+# tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+# device=cuda
+
+# python main.py \
+#     --model ${model} \
+#     --tasks=${tasks} \
+#     --model_args engine=${model_path} \
+#     --device=${device} \
+#     --limit 1000 \
+#     --batch_size 8 \
+
+# Trying to load Llama
+model="hf-auto"
+model_path="pretrained=meta-llama/Llama-2-7b-hf"
+tasks="arc_vi,hellaswag_vi,mmlu_vi"
+device=cuda
+
+python main.py \
+    --model ${model} \
+    --tasks=${tasks} \
+    --model_args ${model_path} \
+    --device=${device} \
+    --limit 1000 \
+    --batch_size 4 

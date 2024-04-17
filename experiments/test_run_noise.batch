@@ -7,8 +7,8 @@
 #SBATCH --partition=gpu          # Name of the partition
 #SBATCH --gpus=5                # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
-##SBATCH --nodelist=!c17       # Node is only available in gpu partition
-#SBATCH --exclude=c13
+#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --exclude=c13,c20
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
 #SBATCH --array=1-5
@@ -53,8 +53,8 @@ langs=("de" "hi" "es" "ar" "ru")
 lang=${langs[$SLURM_ARRAY_TASK_ID-1]}
 model_path="openai-community/gpt2" 
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-# tasks=wmt16-de-en
-tasks="xnli_${lang}"
+tasks=wmt16-de-en
+# tasks="xnli_${lang}"
 device=cuda
 theta=0
 

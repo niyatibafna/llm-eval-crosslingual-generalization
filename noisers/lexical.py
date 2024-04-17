@@ -437,7 +437,8 @@ class GlobalLexicalNoiser(Noise):
         self.tag2wordlist = self.get_tag2wordlist()
         self.vocab_map = self.construct_new_vocab()
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        if hasattr(self, "output_dir"):
+            os.makedirs(self.output_dir, exist_ok=True)
         
 
     @staticmethod

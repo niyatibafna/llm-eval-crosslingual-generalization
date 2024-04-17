@@ -3,13 +3,13 @@
 #$ -N test_trans
 #$ -wd /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation
 #$ -m e
-# #$ -t 4
-#$ -j y -o /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/experiments/qsub_logs/test_noise.log
+#$ -t 1-5
+#$ -j y -o /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/experiments/qsub_logs/test_noise_$TASK_ID.log
 
 # Fill out RAM/memory (same thing) request,
 # the number of GPUs you want,
 # and the hostnames of the machines for special GPU models.
-#$ -l ram_free=30G,mem_free=30G,gpu=1,hostname=!c08*&!c07*&!c04*&!c25*&c*
+#$ -l ram_free=30G,mem_free=30G,gpu=1,hostname=!c08*&!c07*&!c04*&!c24*&!c25*&c*
 
 # Submit to GPU queue
 #$ -q g.q
@@ -18,7 +18,7 @@ source ~/.bashrc
 which python
 
 conda deactivate
-conda activate test2
+conda activate llmrob2
 which python
 
 # Assign a free-GPU to your program (make sure -n matches the requested number of GPUs above)
@@ -40,16 +40,16 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-lang="de"
+langs=("de" "hi" "es" "ar" "ru")
+lang=${langs[$SGE_TASK_ID]}
 model_path="openai-community/gpt2" 
-# model_path="google/mt5-base"
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-# tasks=wmt16-de-en
-tasks=flores200-hin-eng
+tasks=wmt16-de-en
+# tasks="xnli_${lang}"
 device=cuda
-theta=0.01
+theta=0
 
-all_noise_params="character_level:lang=${lang},swap_theta=${theta}"
+all_noise_params="character_level-lang=$lang,swap_theta=$theta"
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs_test/"
 mkdir -p ${output_base_path}
 noised_data_outdir="$output_base_path/noised_data_test/$lang/$all_noise_params/"
@@ -62,7 +62,6 @@ python main.py \
     --tasks=${tasks} \
     --model_args pretrained=${model_path} \
     --device=${device} \
-    --limit 10 \
     --batch_size 8 \
     --write_out \
     --model_alias ${model_path}_${lang} \
@@ -70,6 +69,7 @@ python main.py \
     --all_noise_params_str ${all_noise_params} \
     --output_base_path ${noised_data_outdir} \
     --output_path ${results_outdir}/$tasks.json \
+    # --limit 10 \
     
 
 # --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,

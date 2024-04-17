@@ -1,5 +1,7 @@
 from noise import Noise
 import random
+import os, sys
+from utils.misc import get_character_set
 
 class CharacterLevelNoiser(Noise):
     '''
@@ -7,32 +9,6 @@ class CharacterLevelNoiser(Noise):
     Required params: script, insert_theta, delete_theta, swap_theta
     Input format: {script: latin, insert_theta: 0.1, delete_theta: 0.1, swap_theta: 0.1}
     '''
-    @staticmethod
-    def identify_script(text):
-        '''Identify script of text
-        Args:
-            text: str, input text
-        Returns:
-            str, script of text
-        '''
-        # Identify script of text
-        char_set = {
-            "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)),
-            "devanagari": set(chr(i) for i in range(2304, 2432)),
-            "arabic": set(chr(i) for i in range(1536, 1792)),
-            "cyrillic": set(chr(i) for i in range(1024, 1280)),
-        }
-        # We'll find a majority script
-        script_counts = {script: 0 for script in char_set.keys()}
-        for char in text:
-            for script, char_set in char_set.items():
-                if char in char_set:
-                    script_counts[script] += 1
-
-        return max(script_counts, key=script_counts.get)
-
-
-
     def __init__(self, noise_params):
         '''Initialize noise with noise parameters
         Args:
@@ -48,39 +24,9 @@ class CharacterLevelNoiser(Noise):
         # self.delete_theta = float(noise_params['delete_theta'])
         self.swap_theta = float(noise_params['swap_theta'])
 
-        # Initialize character set according to script
-        self.character_set = self.get_character_set()
+        # Initialize character set according to lang
+        script, self.character_set = get_character_set(self.lang)
     
-    def get_character_set(self):
-        '''Get character set for script
-        Returns:
-            set, character set
-        '''
-        # Get character set for script using Unicode ranges
-        lang_to_script = {
-            "eng": "latin",
-            "deu": "latin",
-            "hin": "devanagari",
-            "ara": "arabic",
-            "rus": "cyrillic",
-            "esp": "latin",
-            "en": "latin",
-            "de": "latin",
-            "hi": "devanagari",
-            "ar": "arabic",
-            "ru": "cyrillic",
-            "es": "latin",
-        }
-        script = lang_to_script[self.lang]
-
-        char_set = {
-            "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)),
-            "devanagari": set(chr(i) for i in range(2304, 2432)),
-            "arabic": set(chr(i) for i in range(1536, 1792)),
-            "cyrillic": set(chr(i) for i in range(1024, 1280)),
-        }
-        return char_set[script]
-
     def apply_noise(self, input):
         '''Apply noise to input
         Args:

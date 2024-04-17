@@ -9,3 +9,5 @@ outputs_test/*
 noisers/vocab.txt
 noisers/utils/ud_closed_class_wordlists/*
 noiser_artifacts/*
+noisers/test_output/*
+noisers/utils/play_with_ipa.py

@@ -85,7 +85,7 @@ from main import parse_noise_params, get_noisers, apply_noisers, record_noiser_a
 # Phonological
 read_file = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/deu/character_level-lang=de,swap_theta=0.0/arc_de_write_out_info.json"
 read_file_hin = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/hin/character_level:lang=hi,swap_theta=0.0/arc_hi_write_out_info.json"
-noise_specs = f"phonological-lang=ara,theta_phon=0.1,text_file=<{read_file_hin}>,output_dir=<test_output/ara/>"
+noise_specs = f"phonological-lang=hi,theta_phon=0.1,text_file=<{read_file_hin}>,output_dir=<test_output/hin/>"
 all_noise_params = parse_noise_params(noise_specs)
 print(f"Noise Parameters: {all_noise_params}")
 

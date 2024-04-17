@@ -3,7 +3,7 @@ import random
 import os
 from collections import defaultdict
 import json
-from utils.misc import get_character_set
+from utils.misc import normalize_lang_codes, get_character_set, identify_script, ipa_char_maps, get_equivalence_classes_ipa
 
 class GlobalPhonologicalNoiser(Noise):
     def __init__(self, noise_params):
@@ -26,8 +26,15 @@ class GlobalPhonologicalNoiser(Noise):
         for key in noise_params:
             setattr(self, key, noise_params[key])
 
+        self.lang = normalize_lang_codes(self.lang)
         script, self.character_set = get_character_set(self.lang)
+
+        # Creates a mapping from each character to a set of characters that are equivalent to it in the script
+        self.target_chars = self.create_equivalence_set_for_script_chars()
+
         self.chargram_map = self.construct_charmap_with_context()
+
+        
 
         if hasattr(self, "output_dir"):
             os.makedirs(self.output_dir, exist_ok=True)
@@ -60,7 +67,7 @@ class GlobalPhonologicalNoiser(Noise):
                 ngrams[ngram] += 1
         return ngrams
     
-    def sample_new_char(self, char):
+    def sample_new_char_at_random(self, char):
         '''Sample a new character
         Args:
             char: str, character to sample new character for
@@ -68,12 +75,66 @@ class GlobalPhonologicalNoiser(Noise):
             str, new character, maintain casing
         '''
 
-        new_char = random.choice(list(self.character_set - {char}))
+        new_char = random.choice(list(self.character_set - {char.lower()} - {char.upper()}))
         if char.isupper():
             new_char = new_char.upper()
         if char.islower():
             new_char = new_char.lower()
         return new_char
+    
+    def sample_new_char(self, char):
+        '''Sample a new character
+        Args:
+            char: str, character to sample new character for
+        Returns:
+            str, new character, maintain casing
+        '''
+        if self.target_chars[char]:
+
+            new_char = random.choice(list(self.target_chars[char.lower()]))
+        
+            if char.isupper():
+                new_char = new_char.upper()
+            if char.islower():
+                new_char = new_char.lower()
+            print(f"Swapping {char} with {new_char}")
+            return new_char
+        
+        return self.sample_new_char_at_random(char)
+
+
+    def create_equivalence_set_for_script_chars(self):
+        '''Create equivalence set for script characters.
+        We do this by first mapping into IPA, using equivalence classes that we already have for IPA, and then mapping back to script.
+        The returned target set for each char does *not* include the char itself.
+        Returns:
+            dict, {char: set of chars}
+        '''
+        ipa_to_script_chars, script_to_ipa_chars = ipa_char_maps()
+        self.ipa_to_script_chars = ipa_to_script_chars[self.lang]
+        self.script_to_ipa_chars = script_to_ipa_chars[self.lang]
+        _, _, equivalence_classes_ipa_per_char = get_equivalence_classes_ipa()
+        self.equivalence_classes_ipa_per_char = equivalence_classes_ipa_per_char
+        
+        target_chars = defaultdict(lambda: set())
+        for char in self.character_set:
+            if char in self.script_to_ipa_chars:
+                ipa_set = self.script_to_ipa_chars[char] # set of ipa characters that char maps to
+                for ipa_char in ipa_set:
+                    # Get equivalence classes for ipa_char
+                    ipa_eq_chars = self.equivalence_classes_ipa_per_char[ipa_char] # set of ipa characters that are equivalent to ipa_char
+                    for ipa_eq_char in ipa_eq_chars:
+                        script_eq_chars = self.ipa_to_script_chars[ipa_eq_char] # set of script characters that are equivalent to ipa_eq_char
+                        target_chars[char].update(script_eq_chars)
+
+        for char in self.character_set:
+            target_chars[char] = target_chars[char] - {char}
+
+        # print(f"Target Chars: {target_chars}")
+
+        return target_chars
+
+    
                 
     def construct_charmap_with_context(self):
         '''
@@ -87,6 +148,7 @@ class GlobalPhonologicalNoiser(Noise):
                 new_char = self.sample_new_char(ngram[1])
                 chargram_map[ngram] = ngram[0] + new_char + ngram[2]
         
+        # print(f"Chargram Map: {chargram_map}")
         return chargram_map
 
 
@@ -137,6 +199,11 @@ class GlobalPhonologicalNoiser(Noise):
         '''Record vocab map, number of words switched out'''
 
         if hasattr(self, "output_dir"):
+            with open(f"{self.output_dir}/source_to_target_set.json", "w") as f:
+                # Serialize
+                source_to_target_set = {source: list(target_set) for source, target_set in self.target_chars.items()}
+                json.dump(source_to_target_set, f, indent=2, ensure_ascii=False)
+
             with open(f"{self.output_dir}/chargram_map.json", "w") as f:
                 json.dump(self.chargram_map, f, indent=2, ensure_ascii=False)
             # stats = self.get_vocab_map_stats()

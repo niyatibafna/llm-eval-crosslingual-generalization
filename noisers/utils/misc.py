@@ -1,3 +1,28 @@
+from collections import defaultdict
+
+def normalize_lang_codes(lang):
+    '''Make everything ISO 639-3'''
+    lang = lang.lower()
+    to_iso3 = {
+        "eng": "eng",
+        "deu": "deu",
+        "hin": "hin",
+        "ara": "ara",
+        "rus": "rus",
+        "esp": "spa",
+        "spa": "spa",
+        "ind": "ind",
+        "en": "eng",
+        "de": "deu",
+        "hi": "hin",
+        "ar": "ara",
+        "ru": "rus",
+        "es": "spa",
+        "id": "ind"
+    }
+    return to_iso3[lang]
+
+
 def get_character_set(lang):
     '''Get character set for script
     Args:
@@ -7,21 +32,16 @@ def get_character_set(lang):
         char_set, character set of that script
     '''
     # Get character set for script using Unicode ranges
+    lang = normalize_lang_codes(lang)
     lang_to_script = {
         "eng": "latin",
         "deu": "latin",
         "hin": "devanagari",
         "ara": "arabic",
         "rus": "cyrillic",
-        "esp": "latin",
-        "en": "latin",
-        "de": "latin",
-        "hi": "devanagari",
-        "ar": "arabic",
-        "ru": "cyrillic",
-        "es": "latin",
+        "spa": "latin",
+        "ind": "latin"
     }
-
     
     script = lang_to_script[lang]
 
@@ -56,3 +76,373 @@ def identify_script(text):
                 script_counts[script] += 1
 
     return max(script_counts, key=script_counts.get)
+
+def ipa_char_maps():
+    '''
+    Defines the maps ipa2chars and char2ipas for a given language (assuming one script per language).
+    Returns:
+        ipa_to_script_chars: dict, mapping from IPA to script characters for each language, {lang: {ipa: set(script_chars)}}
+        script_to_ipa_chars: dict, mapping from script characters to IPA for each language: {lang: {script_char: set(ipas)}}
+        
+    '''
+    # script, char_set = get_character_set(lang)
+    # lang = normalize_lang_codes(lang)
+
+    eng_char2ipas = {
+    'a': {'æ', 'ɑ'},
+    'b': {'b'},
+    'c': {'k', 's'},
+    'd': {'d'},
+    'e': {'ɛ', 'i', 'e'},
+    'f': {'f'},
+    'g': {'ɡ', 'dʒ'},
+    'h': {'h'},
+    'i': {'ɪ', 'i', 'aɪ'},
+    'j': {'dʒ'},
+    'k': {'k'},
+    'l': {'l'},
+    'm': {'m'},
+    'n': {'n'},
+    'o': {'ɑ', 'ʌ', 'o'},
+    'p': {'p'},
+    'q': {'k'},
+    'r': {'r'},
+    's': {'s'},
+    't': {'t'},
+    'u': {'ʊ', 'u'},
+    'v': {'v'},
+    'w': {'w'},
+    'x': {'ks'},
+    'y': {'j'},
+    'z': {'z'}
+    }
+
+    devanagari_to_ipa_set = {
+        'अ': {'ʌ', 'ə'},
+        'आ': {'aː'},
+        'इ': {'ɪ'},
+        'ई': {'iː'},
+        'उ': {'ʊ'},
+        'ऊ': {'uː'},
+        'ऋ': {'r̩', 'rɪ'},
+        'ए': {'eː'},
+        'ऐ': {'aɪ'},
+        'ओ': {'oː'},
+        'औ': {'aʊ'},
+        'अं': {'əŋ', 'ŋ'},
+        'अः': {'əh', 'h'},
+        'क': {'k'},
+        'ख': {'kʰ'},
+        'ग': {'ɡ'},
+        'घ': {'ɡʱ'},
+        'ङ': {'ŋ'},
+        'च': {'t͡ʃ'},
+        'छ': {'t͡ʃʰ'},
+        'ज': {'d͡ʒ'},
+        'झ': {'d͡ʒʱ'},
+        'ञ': {'ɲ'},
+        'ट': {'ʈ'},
+        'ठ': {'ʈʰ'},
+        'ड': {'ɖ'},
+        'ढ': {'ɖʱ'},
+        'ण': {'ɳ'},
+        'त': {'t̪'},
+        'थ': {'t̪ʰ'},
+        'द': {'d̪'},
+        'ध': {'d̪ʱ'},
+        'न': {'n'},
+        'प': {'p'},
+        'फ': {'pʰ'},
+        'ब': {'b'},
+        'भ': {'bʱ'},
+        'म': {'m'},
+        'य': {'j'},
+        'र': {'ɾ'},
+        'ल': {'l'},
+        'व': {'v'},
+        'श': {'ʃ'},
+        'ष': {'ʂ'},
+        'स': {'s'},
+        'ह': {'h'},
+        'ळ': {'ɭ'},
+        'क्ष': {'kʂ'},
+        'ज्ञ': {'d͡ʒɲ'},
+        'ा': {'aː'},
+        'ि': {'ɪ'},
+        'ी': {'iː'},
+        'ु': {'ʊ'},
+        'ू': {'uː'},
+        'ृ': {'r̩', 'rɪ'},
+        'े': {'eː'},
+        'ै': {'aɪ'},
+        'ो': {'oː'},
+        'ौ': {'aʊ'},
+    }
+
+    latin_to_ipa_set_indonesian = {
+        'a': {'a'},
+        'b': {'b'},
+        'c': {'t͡ʃ'},
+        'd': {'d'},
+        'e': {'ə', 'e'},
+        'f': {'f'},
+        'g': {'ɡ'},
+        'h': {'h'},
+        'i': {'i'},
+        'j': {'d͡ʒ'},
+        'k': {'k'},
+        'l': {'l'},
+        'm': {'m'},
+        'n': {'n'},
+        'o': {'o'},
+        'p': {'p'},
+        'q': {'k'},
+        'r': {'r'},
+        's': {'s'},
+        't': {'t'},
+        'u': {'u'},
+        'v': {'v'},
+        'w': {'w'},
+        'x': {'ks'},
+        'y': {'j'},
+        'z': {'z'},
+    }
+
+    latin_to_ipa_set_spanish = {
+        'a': {'a'},
+        'b': {'b'},
+        'c': {'k', 's', 'θ'},
+        'd': {'d'},
+        'e': {'e'},
+        'f': {'f'},
+        'g': {'ɡ', 'x'},
+        'h': {''},  # Silent in most cases
+        'i': {'i'},
+        'j': {'x', 'ʝ', 'h'},  # Variations depending on region and word
+        'k': {'k'},
+        'l': {'l'},
+        'm': {'m'},
+        'n': {'n'},
+        'o': {'o'},
+        'p': {'p'},
+        'q': {'k'},
+        'r': {'r', 'ɾ'},  # Rolled 'r' and flap 'r'
+        's': {'s'},
+        't': {'t'},
+        'u': {'u'},
+        'v': {'b', 'β'},
+        'w': {'w'},
+        'x': {'ks', 'ɡz'},  # In words of foreign origin
+        'y': {'ʝ', 'i'},  # Variations depending on region and word
+        'z': {'θ', 's'}
+    }
+
+    cyrillic_to_ipa_set_russian = {
+        'а': {'a'},
+        'б': {'b'},
+        'в': {'v'},
+        'г': {'ɡ'},
+        'д': {'d'},
+        'е': {'je', 'e', 'ɛ'},  # 'e' can represent both /je/ and /e/ depending on stress
+        'ё': {'jo', 'o', 'ɔ'},  # 'o' can represent both /jo/ and /o/ depending on stress
+        'ж': {'ʐ'},
+        'з': {'z'},
+        'и': {'i'},
+        'й': {'j'},  # Semi-vowel /j/
+        'к': {'k'},
+        'л': {'l'},
+        'м': {'m'},
+        'н': {'n'},
+        'о': {'o'},
+        'п': {'p'},
+        'р': {'r'},
+        'с': {'s'},
+        'т': {'t'},
+        'у': {'u'},
+        'ф': {'f'},
+        'х': {'x', 'h'},  # Variations depending on dialect
+        'ц': {'ts'},
+        'ч': {'tɕ'},
+        'ш': {'ʂ'},
+        'щ': {'ɕtɕ'},
+        'ъ': {''},  # Hard sign, often not pronounced
+        'ы': {'ɨ'},
+        'ь': {''},  # Soft sign, affects the preceding consonant but doesn't add a sound
+        'э': {'ɛ'},
+        'ю': {'ju', 'u', 'ʉ'},  # 'u' can represent both /ju/ and /u/ depending on stress
+        'я': {'ja', 'a', 'æ'},  # 'a' can represent both /ja/ and /a/ depending on stress
+    }
+
+    arabic_to_ipa_set_msa = {
+        'ا': {'ʔ', 'aː'},  # Alif
+        'ب': {'b'},         # Ba
+        'ت': {'t'},         # Ta
+        'ث': {'θ'},         # Tha
+        'ج': {'dʒ'},        # Jim
+        'ح': {'ħ'},         # Hha
+        'خ': {'χ'},         # Kha
+        'د': {'d'},         # Dal
+        'ذ': {'ð'},         # Thal
+        'ر': {'r'},         # Ra
+        'ز': {'z'},         # Zain
+        'س': {'s'},         # Sin
+        'ش': {'ʃ'},         # Shin
+        'ص': {'sˤ'},        # Sad
+        'ض': {'dˤ'},        # Dad
+        'ط': {'tˤ'},        # Ta
+        'ظ': {'ðˤ'},        # Za
+        'ع': {'ʕ'},         # 'Ayn
+        'غ': {'ɣ'},         # Ghayn
+        'ف': {'f'},         # Fa
+        'ق': {'q'},         # Qaf
+        'ك': {'k'},         # Kaf
+        'ل': {'l'},         # Lam
+        'م': {'m'},         # Mim
+        'ن': {'n'},         # Nun
+        'ه': {'h'},         # Ha
+        'و': {'w', 'uː'},   # Waw
+        'ي': {'j', 'iː'},   # Ya
+        'ة': {'aː'},        # Ta marbuta
+        'ى': {'aː'},        # Alif maksura
+        'ء': {'ʔ'},          # Hamza
+        "'َ'": {'a'}, # fatHa
+        "'ِ'": {'i'}, # kasra
+        "'ٌ'": {'un'}, # Damma tanwiin
+        "'ٍ'": {'in'}, # kasra tanwiin
+        "'ً'": {'n'}, # tanwiin
+        "'ّ'": {'ː'}, # shadda (this is for gemination. Not sure how you'd represent this) 
+
+    }
+
+    latin_to_ipa_set_german = {
+    'a': {'a', 'aː'},
+    'b': {'b'},
+    'c': {'k', 't͡s'},  # 'c' can represent both /k/ and /t͡s/
+    'd': {'d'},
+    'e': {'e', 'ɛ', 'eː'},
+    'f': {'f'},
+    'g': {'ɡ'},
+    'h': {'h'},
+    'i': {'i', 'ɪ'},
+    'j': {'j'},
+    'k': {'k'},
+    'l': {'l'},
+    'm': {'m'},
+    'n': {'n'},
+    'o': {'o', 'ɔ', 'oː'},
+    'p': {'p'},
+    'q': {'k', 'kv'},  # 'q' typically represents /kv/ in German
+    'r': {'r', 'ʁ'},  # 'r' can represent both the alveolar tap /r/ and the uvular fricative /ʁ/
+    's': {'z', 's', 'ʃ'},  # 's' can represent /z/, /s/, and /ʃ/ depending on position and word
+    't': {'t'},
+    'u': {'u', 'ʊ', 'uː'},
+    'v': {'f', 'v'},  # 'v' can represent both /f/ and /v/
+    'w': {'v', 'w'},  # 'w' can represent both /v/ and /w/
+    'x': {'ks'},       # 'x' represents /ks/
+    'y': {'y', 'ʏ', 'iː'},  # 'y' can represent /y/, /ʏ/, and /iː/
+    'z': {'ts', 's', 'ʦ'},  # 'z' can represent /ts/, /s/, and /ʦ/
+    'ä': {'ɛ', 'eː'},  # 'ä' can represent both /ɛ/ and /eː/
+    'ö': {'ø', 'øː'},  # 'ö' can represent both /ø/ and /øː/
+    'ü': {'y', 'yː'},  # 'ü' can represent both /y/ and /yː/
+    'ß': {'s'}         # 'ß' represents /s/ or /sː/
+}
+
+
+    script_to_ipa_chars = {
+        'eng': eng_char2ipas,
+        'hin': devanagari_to_ipa_set,
+        'ind': latin_to_ipa_set_indonesian,
+        'spa': latin_to_ipa_set_spanish,
+        'rus': cyrillic_to_ipa_set_russian,
+        'ara': arabic_to_ipa_set_msa,
+        'deu': latin_to_ipa_set_german
+    }
+
+    ipa_to_script_chars = defaultdict(lambda: defaultdict(lambda: set()))
+    for lang, ipa_set in script_to_ipa_chars.items():
+        for script_char, ipas in ipa_set.items():
+            for ipa in ipas:
+                ipa_to_script_chars[lang][ipa].add(script_char)
+
+    return ipa_to_script_chars, script_to_ipa_chars
+
+def get_equivalence_classes_ipa():
+    '''
+    Given a set of IPA characters, group them into equivalence classes
+    '''
+    ipa_chars = {
+        'ʝ', 'a', 'aɪ', 'ɨ', 'aː', 'bʱ', 'ju', 'ə', 'r̩', 'ɕtɕ', \
+            'ː', 'v', 't͡ʃ', 'ks', 't͡s', 'd͡ʒʱ', 'j', 'ʔ', 'əŋ', 'o', \
+            'ts', 's', 'ʌ', 'ʏ', 'ʁ', 'ʂ', 'ð', 'je', 'in', 'iː', \
+            'uː', 'kʰ', 'd', 'u', 'd̪', 'ʐ', 'ɖ', 'ɳ', 'd͡ʒɲ', 'w', \
+            'ʈ', 'tˤ', 'l', 'ja', 'd̪ʱ', 'dˤ', 'q', 'ɣ', 'f', 'kʂ', \
+            'oː', 't̪', 'pʰ', 'ɾ', 'χ', 'rɪ', 'yː', 'p', 'aʊ', 'ɖʱ', \
+            'ɑ', 'h', 'ɡʱ', 'ʃ', 'tɕ', 'ø', 'ɭ', 't̪ʰ', 'd͡ʒ', 'ʕ', \
+            'ʊ', 'ɲ', 'b', 'ɔ', 'm', 'e', 't͡ʃʰ', 't', 'i', 'ʈʰ', 'k', \
+            'ɛ', 'jo', 'æ', 'r', 'x', 'əh', 'ɡ', 'z', 'un', 'ʉ', 'ʦ', 'øː', \
+            'ħ', 'eː', 'ɪ', 'β', 'ŋ', 'ðˤ', 'y', 'sˤ', 'ɡz', 'θ', 'dʒ', 'n', 'kv'
+    }
+
+    # Still missing from below:
+    # {'jo','ju','je', 'ja', 'kv'}
+    ipa_equivalence_classes = {
+        # Consonants:
+        'bilabial_labiodental': {'b', 'bʱ', 'p', 'pʰ', 'ɓ', 'f', 'v', 'β', 'w'},
+        # 'labiodental' : {'f', 'v', 'β'},
+        'dental_alveolar': {'d', 't', 'd̪', 't̪', 's', 'z', 'ɾ', 'ɖ', 'ɭ', \
+                         'ʈ', 'dʒ', 'dˤ', 'ɖʱ', 'ðˤ', 't̪ʰ', 'tˤ', 't͡ʃʰ', 'tɕ', 't͡s', 'ʈʰ', 'd̪ʱ', 'θ', 'ð', 'd͡ʒʱ', 'd͡ʒɲ'},
+        'nasals': {'m', 'n', 'ɲ', 'ŋ', 'ɳ', 'd͡ʒɲ'},
+        'postalveolar_palatal': {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', 'ç', 'ɕtɕ', 'ʂ', 'ts', 'ks', 'ɡz', 'ʐ', 'kʂ', 'ʝ', 'sˤ', 'ʦ'},
+        'retroflex': {'ɽ', 'ɭ', 'r', 'l', 'rɪ', 'r̩'},
+        # 'palatal': {'j', 'ɲ', 'ç'},
+        'velar': {'k', 'kʰ', 'ɡ', 'ɡʱ', 'x', 'ɣ', 'ks', 'ɡz'},
+        'uvular_pharyngeal_glottal': {'q', 'χ', 'ʁ', 'ʕ', 'ħ', 'ʔ', 'h'},
+        # 'pharyngeal/Glottal': {'ʕ', 'ħ', 'ʔ'},
+        # Vowels:
+        'front': {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', 'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ', 'in'},
+        'central': {'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', 'əŋ'},
+        'back': {'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', 'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'un', 'aː', 'aʊ', 'a'}
+    }
+
+    # Original, cleaner version by place of articulation
+    # ipa_equivalence_classes = {
+    #     # Consonants:
+    #     'bilabial': {'b', 'bʱ', 'p', 'pʰ', 'm', 'ɓ'},
+    #     'labiodental': {'f', 'v', 'β'},
+    #     'dental_alveolar': {'d', 't', 'd̪', 't̪', 'd͡ʒ', 't͡ʃ', 's', 'z', 'n', 'l', 'ɾ', 'ɖ', 'ʈ', 'ɳ', 'ɭ', 'ɽ'},
+    #     'nasals': {'m', 'n', 'ɲ', 'ŋ', 'ɳ'},
+    #     'postalveolar': {'ʃ', 'ʒ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ'},
+    #     'retroflex': {'ɽ', 'ʈ', 'ɳ', 'ɭ'},
+    #     'palatal': {'j', 'ɲ', 'ç'},
+    #     'velar': {'k', 'kʰ', 'ɡ', 'ɡʱ', 'ŋ', 'x', 'ɣ'},
+    #     'uvular': {'q', 'χ', 'ʁ'},
+    #     'pharyngeal/Glottal': {'ʕ', 'ħ', 'ʔ'},
+    #     # Vowels:
+    #     'front': {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', 'ɛː', 'øː', 'œː'},
+    #     'central': {'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː'},
+    #     'back': {'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', 'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː'}
+    # }
+
+    # Equivalence class per character
+    ipa_equivalence_classes_per_char = defaultdict(lambda: set())
+    for _, chars in ipa_equivalence_classes.items():
+        for char in chars:
+            ipa_equivalence_classes_per_char[char].update(chars)
+
+    # print(f"Number of IPA characters: {len(ipa_chars)}")
+    # print("Vowels:", vowels)
+    # print("Consonants:", consonants)
+    # print(f"Number of vowels: {len(vowels)}")
+    # print(f"Number of consonants: {len(consonants)}")
+
+    return ipa_chars, ipa_equivalence_classes, ipa_equivalence_classes_per_char
+
+# all_ipa_chars = set()
+# for lang in {"eng", "deu", "hin", "ara", "rus", "spa", "ind"}:
+#     script, char_set = get_character_set(lang)
+#     script_to_ipas = ipa_char_maps(lang)
+#     for char, ipas in script_to_ipas.items():
+#         all_ipa_chars.update(ipas)
+
+# print(all_ipa_chars)
+# print(get_equivalence_classes_ipa())

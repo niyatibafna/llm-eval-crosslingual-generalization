@@ -6,6 +6,7 @@
 #SBATCH --cpus-per-task=3       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --exclude=e01
 #SBATCH --gpus=1                # Total number of gpus
 #SBATCH --mem=100G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
@@ -15,8 +16,6 @@
 
 
 echo "### Running $SLURM_JOB_NAME ###"
-
-set -x # print out every command that's run with a +
 
 nvidia-smi
 
@@ -66,4 +65,4 @@ python main.py \
     --model_args ${model_path} \
     --device=${device} \
     --limit 1000 \
-    --batch_size 4 
+    --batch_size 12 

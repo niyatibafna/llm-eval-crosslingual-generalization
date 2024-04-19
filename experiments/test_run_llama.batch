@@ -11,8 +11,8 @@
 #SBATCH --mem=100G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --output=logs/test.out   # output file name
-#SBATCH --error=logs/test.out    # error file name
+#SBATCH --output=logs/test_llama.out   # output file name
+#SBATCH --error=logs/test_llama.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -64,5 +64,5 @@ python main.py \
     --tasks=${tasks} \
     --model_args ${model_path} \
     --device=${device} \
-    --limit 1000 \
+    --limit 100 \
     --batch_size 12 

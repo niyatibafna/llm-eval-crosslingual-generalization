@@ -12,3 +12,4 @@ noiser_artifacts/*
 noisers/test_output/*
 noisers/utils/play_with_ipa.py
 noisers/utils/play_with_ipa.py
+outputs_archive/*

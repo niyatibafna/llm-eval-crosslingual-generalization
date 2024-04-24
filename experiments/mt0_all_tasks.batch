@@ -1,0 +1,98 @@
+#!/bin/bash
+
+#SBATCH --job-name=mt0_select    # create a short name for your job
+#SBATCH --nodes=2                # node count
+#SBATCH --ntasks=14              # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu-a100          # Name of the partition
+#SBATCH --exclude=e01
+# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=2                # Total number of gpus
+#SBATCH --mem=80G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=0-13
+#SBATCH --output=logs/mt0_%a.out   # output file name
+#SBATCH --error=logs/mt0_%a.out    # error file name
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+echo "HOSTNAME: $(hostname)"
+echo
+echo CUDA in ENV:
+env | grep CUDA
+echo
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/12.1
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob
+which python
+
+set -x # print out every command that's run with a +
+cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+num_langs=7
+num_tasks=2
+langs=("id" "hi" "es" "ar" "ru" "de" "en") # #langs = 7
+lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
+# tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
+# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
+# tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
+# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
+tasks=(xstory_cloze_${lang} flores200-${lang}-en) # #tasks = 2
+# tasks=(flores200-${lang}-en) # #tasks = 1
+
+task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
+
+model="hf-seq2seq"
+model_path="bigscience/mt0-xxl-mt" 
+model_key="mt0xxlmt"
+# tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+# tasks=wmt16-de-en
+# tasks="xnli_${lang}"
+# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang},xnli_${lang}"
+# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang}"
+device=cuda
+# theta=0
+# all_noise_params="character_level-lang=$lang,swap_theta=$theta"
+limit=300
+output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
+mkdir -p ${output_base_path}
+noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/orig~limit-$limit/"
+mkdir -p ${noised_data_outdir}
+results_outdir="$output_base_path/results/$model_key/$lang/orig~limit-$limit/"
+mkdir -p ${results_outdir}
+
+
+python main.py \
+    --model=${model} \
+    --tasks=${task} \
+    --model_args pretrained=${model_path} \
+    --device=${device} \
+    --batch_size 4 \
+    --write_out \
+    --model_alias ${model_path}_${lang} \
+    --task_alias ${tasks} \
+    --output_base_path ${noised_data_outdir} \
+    --output_path ${results_outdir}/$task.json \
+    --limit $limit \
+    # --all_noise_params_str ${all_noise_params} \
+    
+
+# --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,
+# the filename is automatically generated as task_lang_write_out.json
+# --output_path is the file where the results JSON will be stored for the entire run, with the noise params as a JSON key

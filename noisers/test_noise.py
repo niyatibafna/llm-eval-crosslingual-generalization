@@ -83,22 +83,39 @@ from main import parse_noise_params, get_noisers, apply_noisers, record_noiser_a
 #     record_noiser_artifacts(noiser_classes)
 
 # Phonological
-read_file = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/deu/character_level-lang=de,swap_theta=0.0/arc_de_write_out_info.json"
-read_file_hin = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/hin/character_level:lang=hi,swap_theta=0.0/arc_hi_write_out_info.json"
-noise_specs = f"phonological-lang=hi,theta_phon=0.1,text_file=<{read_file_hin}>,output_dir=<test_output/hin/>"
+# read_file = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/deu/character_level-lang=de,swap_theta=0.0/arc_de_write_out_info.json"
+# read_file_hin = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/noised_data/hin/character_level:lang=hi,swap_theta=0.0/arc_hi_write_out_info.json"
+# noise_specs = f"phonological-lang=hi,theta_phon=0.1,text_file=<{read_file_hin}>,output_dir=<test_output/hin/>"
+# all_noise_params = parse_noise_params(noise_specs)
+# print(f"Noise Parameters: {all_noise_params}")
+
+# noiser_classes = get_noisers(all_noise_params)
+# print(f"Noiser Classes: {noiser_classes}")
+
+# inputs = ["The quick brown fox jumps over the lazy dog", "दृश्य प्रकाश ग्लास से गुजरता हुआ जाता है। अन्य प्रकार के विकिरण भी एक समान ढंग से अन्य पदार्थों "]
+
+# for input in inputs:
+#     print(f"Input: {input}")
+#     noised = apply_noisers(input, noiser_classes, verbose=True)
+#     print(f"Noised: {noised}")
+#     print()
+
+# record_noiser_artifacts(noiser_classes)
+    
+
+# Google Translate
+
+noise_specs = "gtrans-src=ru,tgt=be"
 all_noise_params = parse_noise_params(noise_specs)
 print(f"Noise Parameters: {all_noise_params}")
 
 noiser_classes = get_noisers(all_noise_params)
 print(f"Noiser Classes: {noiser_classes}")
 
-inputs = ["The quick brown fox jumps over the lazy dog", "दृश्य प्रकाश ग्लास से गुजरता हुआ जाता है। अन्य प्रकार के विकिरण भी एक समान ढंग से अन्य पदार्थों "]
+inputs = ["Як правіла, брытанскія фунты будуць прымаць усюды на астравах.Стэнлі таксама часта прымае крэдытныя карты і долары ЗША."]
 
 for input in inputs:
     print(f"Input: {input}")
     noised = apply_noisers(input, noiser_classes, verbose=True)
     print(f"Noised: {noised}")
     print()
-
-record_noiser_artifacts(noiser_classes)
-    

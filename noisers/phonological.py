@@ -34,8 +34,6 @@ class GlobalPhonologicalNoiser(Noise):
 
         self.chargram_map = self.construct_charmap_with_context()
 
-        
-
         if hasattr(self, "output_dir"):
             os.makedirs(self.output_dir, exist_ok=True)
 

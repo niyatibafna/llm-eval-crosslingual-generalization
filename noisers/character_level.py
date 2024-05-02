@@ -1,7 +1,7 @@
 from noise import Noise
 import random
 import os, sys
-from utils.misc import get_character_set
+from utils.misc import get_character_set, normalize_lang_codes
 
 class CharacterLevelNoiser(Noise):
     '''
@@ -19,7 +19,8 @@ class CharacterLevelNoiser(Noise):
         # self.required_keys = {"lang", "insert_theta", "delete_theta", "swap_theta"}
         self.check_noise_params(noise_params)
 
-        self.lang = noise_params['lang']
+        
+        self.lang = normalize_lang_codes(noise_params['lang'])
         # self.insert_theta = float(noise_params['insert_theta'])
         # self.delete_theta = float(noise_params['delete_theta'])
         self.swap_theta = float(noise_params['swap_theta'])

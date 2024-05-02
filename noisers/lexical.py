@@ -6,6 +6,8 @@ import json
 import sys
 import os
 
+from utils.misc import normalize_lang_codes
+
 sys.path.append(os.getcwd())
 
 from utils.get_functional_words import OUTDIR, closed_class_tags
@@ -418,7 +420,7 @@ class GlobalLexicalNoiser(Noise):
                 theta_func_global: float, probability of switching out a function word with a non-word
             Also accepts:
                 chargram_length: int, character n-gram length
-                output_file: str, output directory
+                output_dir: str, output directory
         '''
         self.class_name = "GlobalLexicalNoiser"
         self.required_keys = {"lang", "text_file", "theta_content_global", "theta_func_global"}
@@ -426,6 +428,9 @@ class GlobalLexicalNoiser(Noise):
         self.check_noise_params(noise_params)
 
         for key in noise_params:
+            if key == "lang":
+                self.lang = normalize_lang_codes(noise_params[key])
+                continue
             setattr(self, key, noise_params[key])
 
         if not hasattr(self, "chargram_length"):

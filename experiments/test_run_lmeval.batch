@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#SBATCH --job-name=test    # create a short name for your job
+#SBATCH --nodes=2                # node count
+#SBATCH --ntasks=3               # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu-a100          # Name of the partition
+#SBATCH --exclude=e01
+# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=3                # Total number of gpus
+#SBATCH --mem=80G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --output=logs/test_mt0_lmeval_xnli_hi.out   # output file name
+#SBATCH --error=logs/test_mt0_lmeval_xnli_hi.out    # error file name
+#SBATCH --array=0-2
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/12.1
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob
+which python
+
+set -x # print out every command that's run with a +
+cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+# Trying GPT3.5
+# export OPENAI_API_SECRET_KEY=""
+# model="gpt3"
+# model_path="gpt-3.5-turbo-0125"
+# tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+# device=cuda
+
+# python main.py \
+#     --model ${model} \
+#     --tasks=${tasks} \
+#     --model_args engine=${model_path} \
+#     --device=${device} \
+#     --limit 1000 \
+#     --batch_size 8 \
+
+# Trying mT5
+# model="hf-seq2seq"
+# model_path="pretrained=google/mt5-base"
+# model="hf-auto"
+# GPT2
+# model="hf-seq2seq"
+# model_path="ai-forever/mGPT" 
+model_path="bigscience/mt0-xxl-mt" 
+# model_key="mgpt"
+
+device=cuda
+
+# tasks="arc_vi,hellaswag_vi,mmlu_vi"
+langs=("hi" "ar" "en")
+lang=${langs[$SLURM_ARRAY_TASK_ID]}
+tasks="xnli_$lang"
+device=cuda
+
+lm_eval --model hf \
+    --model_args pretrained=$model_path \
+    --tasks $tasks \
+    --device cuda:0 \
+    --batch_size 16 \
+    --limit 300 \

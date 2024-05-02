@@ -5,7 +5,7 @@
 #SBATCH --ntasks=12               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu          # Name of the partition
-#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
 #SBATCH --gpus=12                # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
@@ -64,11 +64,13 @@ echo "Running for $src_lang -> $tgt_lang"
 
 model_path="openai-community/gpt2" 
 model_key="gpt2"
-tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+tasks=(flores200-${lang}-en) # #tasks = 1
+task=${tasks[0]}
+
 device=cuda
 
 all_noise_params="gtrans-src=${src_lang},tgt=${tgt_lang}"
-limit=500
+limit=200
 
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
 mkdir -p ${output_base_path}
@@ -88,7 +90,7 @@ python main.py \
     --task_alias ${tasks} \
     --all_noise_params_str ${all_noise_params} \
     --output_base_path ${noised_data_outdir} \
-    --output_path ${results_outdir}/$tasks.json \
+    --output_path ${results_outdir}/$task.json \
     --limit $limit
     
 

@@ -1,18 +1,18 @@
 #!/bin/bash
 
-#SBATCH --job-name=mgpt_xnli    # create a short name for your job
-#SBATCH --nodes=2                # node count
-#SBATCH --ntasks=2               # total number of tasks across all nodes
+#SBATCH --job-name=write_out_dataset    # create a short name for your job
+#SBATCH --nodes=3                # node count
+#SBATCH --ntasks=7               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --partition=gpu          # Name of the partition
+#SBATCH --partition=cpu          # Name of the partition
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus=2               # Total number of gpus
+# #SBATCH --gpus=2               # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
-#SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-1
-#SBATCH --output=logs/mgpt_xnli_%a.out   # output file name
-#SBATCH --error=logs/mgpt_xnli_%a.out    # error file name
+#SBATCH --time=00:40:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=0-6
+#SBATCH --output=logs/write_%a.out   # output file name
+#SBATCH --error=logs/write_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -44,33 +44,27 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-num_langs=2
+num_langs=7
 num_tasks=1
-# langs=("id" "hi" "es" "ar" "ru" "de", "en") # #langs = 7
-langs=("hi" "ar") # #langs = 2
+langs=("id" "hi" "es" "ar" "ru" "de" "en") # #langs = 7
+# langs=("hi" "ar") # #langs = 2
 lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
-# tasks=(flores200-${lang}-en) # #tasks = 1
+tasks=(flores200-${lang}-en) # #tasks = 1
 # tasks=(arc_${lang} flores200-${lang}-en) # #tasks = 2
-tasks=(xnli_${lang}) #tasks = 1
+# tasks=(xnli_${lang}) #tasks = 1
 task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
 
 model="hf-seq2seq"
-model_path="ai-forever/mGPT" 
-model_key="mgpt"
+model_path="google-bert/bert-base-uncased" 
+model_key="bert-base-uncased"
 
 device=cuda
-# theta=0
-# all_noise_params="character_level-lang=$lang,swap_theta=$theta"
-limit=300
-output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs_test/"
-mkdir -p ${output_base_path}
-noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/orig~limit-$limit/"
-mkdir -p ${noised_data_outdir}
-results_outdir="$output_base_path/results/$model_key/$lang/orig~limit-$limit/"
-mkdir -p ${results_outdir}
 
+dataset_save_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/$lang/"
+mkdir -p ${dataset_save_dir}
+dataset_outfile="${dataset_save_dir}/${task}.txt"
 
 python main.py \
     --model ${model} \
@@ -78,12 +72,10 @@ python main.py \
     --model_args pretrained=${model_path} \
     --device=${device} \
     --batch_size 1 \
-    --write_out \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \
-    --output_base_path ${noised_data_outdir} \
-    --output_path ${results_outdir}/${task}.json \
-    --limit $limit \
+    --dataset_outfile ${dataset_outfile} 
+    # --limit $limit \
     # --all_noise_params_str ${all_noise_params} \
     
 

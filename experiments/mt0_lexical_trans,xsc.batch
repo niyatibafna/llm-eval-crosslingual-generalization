@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=mt0_select    # create a short name for your job
-#SBATCH --nodes=2                # node count
-#SBATCH --ntasks=28              # total number of tasks across all nodes
+#SBATCH --job-name=mt0_transc_xsc    # create a short name for your job
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=36              # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --partition=gpu-a100          # Name of the partition
-#SBATCH --exclude=e01
-# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus=2                # Total number of gpus
-#SBATCH --mem=80G                # Total memory allocated
+#SBATCH --partition=gpu          # Name of the partition
+# #SBATCH --exclude=e01
+#SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus=1                # Total number of gpus
+#SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
-#SBATCH --time=2:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-27
-#SBATCH --output=logs/mt0_%a.out   # output file name
-#SBATCH --error=logs/mt0_%a.out    # error file name
+#SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=0-35
+#SBATCH --output=logs/mt0_trans_xsc_%a.out   # output file name
+#SBATCH --error=logs/mt0_trans_xsc_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -45,26 +45,41 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-num_langs=7
-num_tasks=4
-langs=("id" "hi" "ar" "es" "ru" "de" "en") # #langs = 7
-lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
+num_langs=3
+num_tasks=2
+num_params=6
+# langs=("en" "id" "hi" "ar" "es" "ru" "de") # #langs = 7
+langs=("en" "hi" "id") # #langs = 3
+
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
 # tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
-# tasks=(xstory_cloze_${lang} flores200-${lang}-en) # #tasks = 2
+tasks=(xstory_cloze_${lang} flores200-${lang}-en) # #tasks = 2
 # tasks=(flores200-${lang}-en) # #tasks = 1
 # tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 6
-tasks=(xnli_${lang} xstory_cloze_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 4
+# tasks=(xnli_${lang} xstory_cloze_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 4
 
+theta_content_globals=(0.05 0.1 0.15 0.2 0.3 0.5)
 
-task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
+tasks_prod_params=$num_tasks * $num_params
+lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
+x=$SLURM_ARRAY_TASK_ID % $tasks_prod_params
+task=${tasks[x / $num_params]}
+theta_func_global=${theta_content_globals[$x % $num_params]}
+
+echo "lang: $lang"
+echo "task: $task"
+echo "theta_func_global: $theta_func_global"
+
 
 model="hf-seq2seq"
-model_path="bigscience/mt0-xxl-mt" 
+# model_path="bigscience/mt0-xxl-mt" 
+# model_key="mt0xxlmt~0shot"
+model_path="ai-forever/mGPT"
 model_key="mt0xxlmt~0shot"
+
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
 # tasks=wmt16-de-en
 # tasks="xnli_${lang}"
@@ -73,12 +88,21 @@ model_key="mt0xxlmt~0shot"
 device=cuda
 # theta=0
 # all_noise_params="character_level-lang=$lang,swap_theta=$theta"
+
+exp_key="lexical-lang=$lang,theta_content_global=0.5,theta_func_global=0.8"
+dataset_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/$lang/"
+dataset_file="${dataset_save_dir}/${task}.txt"
+output_dir=f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/lexical/$exp_key"
+mkdir -p ${output_dir}
+all_noise_params_str=f"lexical-lang=$lang,theta_content_global=0.5,theta_func_global=0.8,text_file=$dataset_file>,output_dir=$output_dir"
+
+
 limit=300
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
 mkdir -p ${output_base_path}
-noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/orig~limit-$limit/"
+noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/$exp_key~limit-$limit/"
 mkdir -p ${noised_data_outdir}
-results_outdir="$output_base_path/results/$model_key/$lang/orig~limit-$limit/"
+results_outdir="$output_base_path/results/$model_key/$lang/$exp_key~limit-$limit/"
 mkdir -p ${results_outdir}
 
 
@@ -87,14 +111,14 @@ python main.py \
     --tasks=${task} \
     --model_args pretrained=${model_path} \
     --device=${device} \
-    --batch_size 12 \
+    --batch_size 32 \
     --write_out \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \
     --output_base_path ${noised_data_outdir} \
     --output_path ${results_outdir}/$task.json \
     --limit $limit \
-    # --all_noise_params_str ${all_noise_params} \
+    --all_noise_params_str ${all_noise_params_str} \
     
 
 # --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,

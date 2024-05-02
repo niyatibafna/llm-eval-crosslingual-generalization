@@ -2,25 +2,71 @@ from collections import defaultdict
 
 def normalize_lang_codes(lang):
     '''Make everything ISO 639-3'''
+    # {Spanish: es, Hindi: hi, Russian: ru, Indonesian: id, English: en
+# Catalan: ca, Galician: gl, Portuguese: pt, Bengali: bn, Marathi: mr, Nepali: ne, Slovak: sk, Serbian: sr
+# Croatian: hr, Ukrainian: uk
+# Bulgarian, Belarusian
+# }
     lang = lang.lower()
     to_iso3 = {
-        "eng": "eng",
-        "deu": "deu",
-        "hin": "hin",
-        "ara": "ara",
-        "rus": "rus",
         "esp": "spa",
-        "spa": "spa",
-        "ind": "ind",
         "en": "eng",
         "de": "deu",
         "hi": "hin",
         "ar": "ara",
         "ru": "rus",
         "es": "spa",
-        "id": "ind"
+        "cs": "ces",
+        "id": "ind",
+        "ca": "cat",
+        "gl": "glg",
+        "pt": "por",
+        "bn": "ben",
+        "mr": "mar",
+        "ne": "nep",
+        "sk": "slk",
+        "sr": "srp",
+        "hr": "hrv",
+        "uk": "ukr",
+        "bg": "bul",
+        "be": "bel",
     }
-    return to_iso3[lang]
+    return to_iso3.get(lang, lang)
+
+
+def get_lang_name(lang_code):
+    '''Get language name from language code
+    Args:
+        lang_code: str, language code
+    Returns:
+        str, language name
+    '''
+    lang_code = normalize_lang_codes(lang_code)
+    lang_map = {
+        "eng": "English",
+        "deu": "German",
+        "hin": "Hindi",
+        "ara": "Arabic",
+        "rus": "Russian",
+        "spa": "Spanish",
+        "ind": "Indonesian",
+        "cat": "Catalan",
+        "glg": "Galician",
+        "por": "Portuguese",
+        "ben": "Bengali",
+        "mar": "Marathi",
+        "nep": "Nepali",
+        "slk": "Slovak",
+        "srp": "Serbian",
+        "hrv": "Croatian",
+        "ukr": "Ukrainian",
+        "bho": "Bhojpuri",
+        "bel": "Belarusian",
+        "bos": "Bosnian",
+        "bul": "Bulgarian",
+        "ces": "Czech",
+    }
+    return lang_map[lang_code]
 
 
 def get_character_set(lang):

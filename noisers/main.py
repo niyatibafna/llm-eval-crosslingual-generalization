@@ -1,7 +1,7 @@
 from phonological import GlobalPhonologicalNoiser
 from character_level import CharacterLevelNoiser
 from lexical import GlobalLexicalNoiser
-from google_translate import GoogleTranslateNoiser
+# from google_translate import GoogleTranslateNoiser
 
 from collections import defaultdict
 import regex
@@ -10,7 +10,7 @@ NOISE_REGISTRY = {
     'phonological': GlobalPhonologicalNoiser,
     'character_level': CharacterLevelNoiser,
     'lexical': GlobalLexicalNoiser,
-    'gtrans': GoogleTranslateNoiser,
+    # 'gtrans': GoogleTranslateNoiser,
 }
 
 def parse_noise_params(noise_params_str):

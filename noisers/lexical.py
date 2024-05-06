@@ -6,7 +6,7 @@ import json
 import sys
 import os
 
-from utils.misc import normalize_lang_codes
+from utils.misc import normalize_lang_codes, get_character_set
 
 sys.path.append(os.getcwd())
 
@@ -435,6 +435,8 @@ class GlobalLexicalNoiser(Noise):
 
         if not hasattr(self, "chargram_length"):
             self.chargram_length = 3
+        
+        _, self.character_set = get_character_set(self.lang)
 
         # Initialize vocabulary
         self.vocab = self.get_vocab(self.text_file)
@@ -446,8 +448,7 @@ class GlobalLexicalNoiser(Noise):
             os.makedirs(self.output_dir, exist_ok=True)
         
 
-    @staticmethod
-    def get_vocab(text_file):
+    def get_vocab(self, text_file):
         '''Initialize vocabulary from vocab file'''
         print(f"Initializing vocabulary from {text_file}...")
         vocab = defaultdict(lambda: 0)
@@ -456,9 +457,13 @@ class GlobalLexicalNoiser(Noise):
             for word in words:
                 # Remove punctuation
                 word = word.strip(".,!?")
-                # If word has non-alphabetic characters, skip
-                if not word.isalpha():
+                # If word has numeric characters, skip
+                if any(char.isdigit() for char in word):
                     continue
+                # All characters in word must be in character set
+                if not all(char in self.character_set for char in word):
+                    continue
+                                
                 vocab[word.lower()] += 1
         print(f"Finished initializing vocabulary from {text_file}!")
 

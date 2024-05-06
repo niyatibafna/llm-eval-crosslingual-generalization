@@ -1,9 +1,9 @@
 #!/bin/bash
-#$ -N new_tasks
+#$ -N lex_xnli
 #$ -wd /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation
 #$ -m e
-#$ -t 1-36
-#$ -j y -o /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/experiments/qsub_logs/new_tasks_$TASK_ID.log
+#$ -t 1-15
+#$ -j y -o /export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/experiments/qsub_logs/lex_mt0_xnli_$TASK_ID.log
 
 # Fill out RAM/memory (same thing) request,
 # the number of GPUs you want,
@@ -40,10 +40,11 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 # bash scripts/run.sh vi openai-community/gpt2 
 
 num_langs=3
-num_tasks=2
-num_params=6
+num_tasks=1
+num_params=5
 # langs=("en" "id" "hi" "ar" "es" "ru" "de") # #langs = 7
 langs=("en" "hi" "id") # #langs = 3
+# langs=("hi") # #langs = 1
 tasks_prod_params=$((num_tasks * num_params))
 task_id=$((SGE_TASK_ID - 1))
 lang=${langs[$((task_id / tasks_prod_params))]}
@@ -51,13 +52,14 @@ lang=${langs[$((task_id / tasks_prod_params))]}
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
 # tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
-tasks=(xstory_cloze_${lang} flores200-${lang}-en) # #tasks = 2
-# tasks=(flores200-${lang}-en) # #tasks = 1
+# tasks=(truthfulqa_${lang}) # #tasks = 1
+# tasks=(flores200-${lang}-en xstory_cloze_${lang}) # #tasks = 2
+tasks="xnli_${lang}"
 # tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 6
 # tasks=(xnli_${lang} xstory_cloze_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 4
 
-theta_content_globals=(0.05 0.1 0.15 0.2 0.3 0.5)
+theta_content_globals=(0.01 0.05 0.10 0.15 0.3)
 
 x=$((task_id % tasks_prod_params))
 task=${tasks[$((x / num_params))]}
@@ -70,9 +72,7 @@ echo "theta_func_global: $theta_func_global"
 
 # model="hf-seq2seq"
 model="hf-auto"
-# model_path="bigscience/mt0-xxl-mt" 
-# model_key="mt0xxlmt~0shot"
-model_path="ai-forever/mGPT"
+model_path="bigscience/mt0-xxl-mt" 
 model_key="mt0xxlmt~0shot"
 
 # tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
@@ -89,7 +89,7 @@ dataset_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datas
 dataset_file="${dataset_dir}/${task}.txt"
 output_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/lexical/$exp_key"
 mkdir -p ${output_dir}
-all_noise_params_str="lexical-lang=$lang,theta_content_global=0.5,theta_func_global=0.8,text_file=<$dataset_file>,output_dir=<$output_dir>"
+all_noise_params_str="lexical-lang=$lang,theta_content_global=$theta_func_global,theta_func_global=1.0,text_file=<$dataset_file>,output_dir=<$output_dir>"
 
 
 limit=300
@@ -106,7 +106,7 @@ python main.py \
     --tasks=${task} \
     --model_args pretrained=${model_path} \
     --device=${device} \
-    --batch_size 10 \
+    --batch_size 2 \
     --write_out \
     --model_alias ${model_path}_${lang} \
     --task_alias ${tasks} \

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=write_out_dataset    # create a short name for your job
-#SBATCH --nodes=3                # node count
+#SBATCH --nodes=4                # node count
 #SBATCH --ntasks=7               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=cpu          # Name of the partition
@@ -51,8 +51,9 @@ langs=("id" "hi" "es" "ar" "ru" "de" "en") # #langs = 7
 lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
-tasks=(flores200-${lang}-en) # #tasks = 1
-# tasks=(arc_${lang} flores200-${lang}-en) # #tasks = 2
+# tasks=(flores200-${lang}-en truthfulqa_${lang} xnli_${lang}) # #tasks = 3
+# tasks=(flores200-${lang}-en truthfulqa_${lang} xnli_${lang}) # #tasks = 3
+tasks=(truthfulqa_${lang}) # #tasks = 1
 # tasks=(xnli_${lang}) #tasks = 1
 task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
 

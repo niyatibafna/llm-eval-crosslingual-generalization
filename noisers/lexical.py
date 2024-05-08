@@ -15,6 +15,8 @@ from utils.get_functional_words import outpath_paths as ud_wordlists_paths
 
 from scipy.stats import chisquare
 
+random.seed(42)
+
 class LexicalNoiser(Noise):
     '''
     Noise type: switch out words from the vocabulary with non-words, and apply this change globally to every occurrence.

@@ -5,6 +5,8 @@ from collections import defaultdict
 import json
 from utils.misc import normalize_lang_codes, get_character_set, identify_script, ipa_char_maps, get_equivalence_classes_ipa
 
+random.seed(42)
+
 class GlobalPhonologicalNoiser(Noise):
     def __init__(self, noise_params):
         '''Initialize phonological noiser with noise parameters

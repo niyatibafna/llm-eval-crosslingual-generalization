@@ -1,6 +1,7 @@
 from phonological import GlobalPhonologicalNoiser
 from character_level import CharacterLevelNoiser
 from lexical import GlobalLexicalNoiser
+from morphological import GlobalMorphologicalNoiser
 # from google_translate import GoogleTranslateNoiser
 
 from collections import defaultdict
@@ -10,6 +11,7 @@ NOISE_REGISTRY = {
     'phonological': GlobalPhonologicalNoiser,
     'character_level': CharacterLevelNoiser,
     'lexical': GlobalLexicalNoiser,
+    'morph': GlobalMorphologicalNoiser,
     # 'gtrans': GoogleTranslateNoiser,
 }
 

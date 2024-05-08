@@ -5,14 +5,14 @@
 #SBATCH --ntasks=3               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
-#SBATCH --exclude=e01
+# #SBATCH --exclude=e01
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
 #SBATCH --gpus=3                # Total number of gpus
 #SBATCH --mem=80G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --output=logs/test_mt0_lmeval_xnli_hi.out   # output file name
-#SBATCH --error=logs/test_mt0_lmeval_xnli_hi.out    # error file name
+#SBATCH --output=logs/test_mt0_lmeval_xnli_%a.out   # output file name
+#SBATCH --error=logs/test_mt0_lmeval_xnli_%a.out    # error file name
 #SBATCH --array=0-2
 
 

@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=mt0_hi_transc_xsc    # create a short name for your job
-#SBATCH --nodes=2                # node count
-#SBATCH --ntasks=10              # total number of tasks across all nodes
+#SBATCH --job-name=mt0_en_trans    # create a short name for your job
+#SBATCH --nodes=1               # node count
+#SBATCH --ntasks=1              # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --exclude=e01
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus=2                # Total number of gpus
-#SBATCH --mem=50G                # Total memory allocated
+#SBATCH --gpus=1                # Total number of gpus
+#SBATCH --mem=80G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-9
-#SBATCH --output=logs/mt0_hi_transc_xsc_%a.out   # output file name
-#SBATCH --error=logs/mt0_hi_transc_xsc_%a.out    # error file name
+#SBATCH --array=0
+#SBATCH --output=logs/mt0_trans_%a.out   # output file name
+#SBATCH --error=logs/mt0_trans_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -47,11 +47,11 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 
 
 num_langs=1
-num_tasks=2
-num_params=5
+num_tasks=1
+num_params=1
 # langs=("en" "id" "hi" "ar" "es" "ru" "de") # #langs = 7
 # langs=("en" "hi" "id") # #langs = 3
-langs=("hi") # #langs = 1
+langs=("en") # #langs = 1
 tasks_prod_params=$((num_tasks * num_params))
 lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
@@ -59,12 +59,13 @@ lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
 # tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
 # tasks=(truthfulqa_${lang}) # #tasks = 1
-tasks=(flores200-${lang}-en xstory_cloze_${lang}) # #tasks = 2
+tasks=(flores200-${lang}-en) # #tasks = 2
 # tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 6
 # tasks=(xnli_${lang} xstory_cloze_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 4
 
-theta_content_globals=(0.01 0.05 0.10 0.15 0.3)
+# theta_content_globals=(0.01 0.05 0.10 0.15 0.3)
+theta_content_globals=(0.3)
 
 x=$((SLURM_ARRAY_TASK_ID % tasks_prod_params))
 task=${tasks[$((x / num_params))]}
@@ -89,7 +90,7 @@ device=cuda
 # theta=0
 # all_noise_params="character_level-lang=$lang,swap_theta=$theta"
 
-exp_key="lexical-lang=$lang,theta_content_global=$theta_func_global,theta_func_global=1.0"
+exp_key="testprompt_lexical-lang=$lang,theta_content_global=$theta_func_global,theta_func_global=1.0"
 dataset_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/$lang/"
 dataset_file="${dataset_dir}/${task}.txt"
 output_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/lexical/$exp_key"

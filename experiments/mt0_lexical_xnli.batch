@@ -7,8 +7,8 @@
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --exclude=e01
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus=4                # Total number of gpus
-#SBATCH --mem=50G                # Total memory allocated
+#SBATCH --gpus=2                # Total number of gpus
+#SBATCH --mem=80G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
 #SBATCH --array=0-14

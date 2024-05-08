@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=bloomz_xsc    # create a short name for your job
-#SBATCH --nodes=2                # node count
-#SBATCH --ntasks=7             # total number of tasks across all nodes
+#SBATCH --job-name=bloomz_trans_en    # create a short name for your job
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=1             # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --exclude=e01
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus=4                # Total number of gpus
+#SBATCH --gpus=1                # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-6
-#SBATCH --output=logs/bloomz_xsc_%a.out   # output file name
-#SBATCH --error=logs/bloomz_xsc_%a.out    # error file name
+#SBATCH --array=0
+#SBATCH --output=logs/bloomz_xsc_id_%a.out   # output file name
+#SBATCH --error=logs/bloomz_xsc_id_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -45,19 +45,18 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 ## SCRIPT TO RUN
 # bash scripts/run.sh vi openai-community/gpt2 
 
-num_langs=7
+num_langs=1
 num_tasks=1
 # langs=("id" "hi" "ar" "en" "es" "ru" "de") # #langs = 7
-langs=("hi" "ar" "en" "es" "ru" "de" "id") # #langs = 7
-# langs=("id") # #langs = 7
+langs=("en") # #langs = 7
 lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
 # tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
-# tasks=(flores200-${lang}-en) # #tasks = 1
+tasks=(flores200-${lang}-en) # #tasks = 1
 # tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang})
-tasks=(xstory_cloze_${lang}) #tasks = 1
+# tasks=(xstory_cloze_${lang}) #tasks = 1
 
 task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
 
@@ -75,9 +74,9 @@ device=cuda
 limit=300
 output_base_path="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/"
 mkdir -p ${output_base_path}
-noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/nonoise~limit-$limit/"
+noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/orig~limit-$limit-testprompt/"
 mkdir -p ${noised_data_outdir}
-results_outdir="$output_base_path/results/$model_key/$lang/nonoise_orig~limit-$limit/"
+results_outdir="$output_base_path/results/$model_key/$lang/orig~limit-$limit-testprompt/"
 mkdir -p ${results_outdir}
 
 

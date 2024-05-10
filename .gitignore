@@ -15,3 +15,5 @@ noisers/utils/play_with_ipa.py
 outputs_archive/*
 datasets/*
 .env
+noisers/noiser_artifacts/*
+noisers/test_noised_outputs/*

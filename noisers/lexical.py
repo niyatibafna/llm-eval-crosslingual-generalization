@@ -1,4 +1,5 @@
 from noise import Noise
+from phonological import GlobalPhonologicalNoiser
 import random
 from collections import defaultdict, Counter
 import numpy as np
@@ -201,6 +202,9 @@ class GlobalLexicalNoiser(Noise):
         
         _, self.character_set = get_character_set(self.lang)
 
+        # We'll use a phonological noiser for function words
+        self.phon_noiser = GlobalPhonologicalNoiser({"lang": self.lang, "theta_phon": 0.5, "text_file": self.text_file})
+
         # Initialize vocabulary
         self.vocab = self.get_vocab(self.text_file)
         self.chargram_models = self.train_chargram_model(self.chargram_length)
@@ -341,9 +345,10 @@ class GlobalLexicalNoiser(Noise):
                                                and self.vocab_map[word] != word])/stats["func_words"], 2)
         return stats
         
-    def construct_new_vocab(self):
+    def construct_new_vocab_archive(self):
         '''
-        With probability theta_global, switch out a word from the vocabulary with a non-word
+        With probability theta_global, switch out a word from the vocabulary with a non-word,
+        applying appropriate theta for functional and content words
         Returns:
             vocab_map: dict, mapping of old word to new word
         '''
@@ -362,6 +367,34 @@ class GlobalLexicalNoiser(Noise):
             else:
                 vocab_map[word] = word
         
+        return vocab_map
+
+    def construct_new_vocab(self):
+        '''
+        With probability theta_global_*, switch out a word from the vocabulary.
+        If it's a functional word, we'll apply phonological noise to it.
+        If it's a content word, we'll change it to a non-word.
+        Returns:
+            vocab_map: dict, mapping of old word to new word
+        '''
+        vocab_map = dict()
+        for word in self.vocab:
+            # If word is functional:
+            if self.is_word_functional(word):
+                if random.random() < self.theta_func_global:
+                    # print(f"Switching out {word}")
+                    new_word = self.phon_noiser.apply_noise_for_sure(word)
+                    vocab_map[word] = new_word
+                else:
+                    vocab_map[word] = word
+                continue
+            # If word is content:
+            if random.random() < self.theta_content_global:
+                # print(f"Switching out {word}")
+                new_word = self.generate_word(len(word))
+                vocab_map[word] = new_word
+            else:
+                vocab_map[word] = word
         return vocab_map
 
     def apply_noise(self, input):

@@ -1,10 +1,12 @@
 from noise import Noise
+from phonological import GlobalPhonologicalNoiser
 import random
 from collections import defaultdict, Counter
 import numpy as np
 import json
 import sys
 import os
+from tqdm import tqdm
 
 from utils.misc import normalize_lang_codes, get_character_set
 
@@ -16,6 +18,8 @@ from utils.get_functional_words import outpath_paths as ud_wordlists_paths
 from scipy.stats import chisquare
 
 random.seed(42)
+np.random.seed(42)
+rng = np.random.default_rng(42)
 
 
 class GlobalMorphologicalNoiser(Noise):
@@ -37,6 +41,7 @@ class GlobalMorphologicalNoiser(Noise):
                 chargram_length: int, character n-gram length (default: 3)
                 output_dir: str, output directory for noiser artifacts
         '''
+
         self.class_name = "GlobalMorphologicalNoiser"
         self.required_keys = {"lang", "text_file", "theta_morph_global"}
         self.allowed_keys = {"chargram_length", "output_dir"}
@@ -55,10 +60,14 @@ class GlobalMorphologicalNoiser(Noise):
 
         # Initialize vocabulary
         self.vocab = self.get_vocab(self.text_file)
-        self.chargram_models = self.train_chargram_model(self.chargram_length)
+        ### We're not using chargram models for now
+        # self.chargram_models = self.train_chargram_model(self.chargram_length)
+        self.phon_noiser = GlobalPhonologicalNoiser({"lang": self.lang, "theta_phon": 0.5, "text_file": self.text_file})
         self.tag2wordlist = self.get_tag2wordlist()
         self.suffix_freq, self.most_frequent_word_per_suffix = self.get_suffix_frequency()
-        self.filter_suffix_frequency()
+        # self.filter_suffix_frequency()
+        self.filter_suffix_topk()
+        # self.chargram_models = self.train_suffix_chargram_model(self.chargram_length)
 
         # Construct suffix --> new suffix map
         self.suffix_map = self.construct_suffix_map()
@@ -83,19 +92,44 @@ class GlobalMorphologicalNoiser(Noise):
         for n in range(1, chargram_length + 1):
             chargram_model = defaultdict(lambda: defaultdict(lambda: 0)) # {prefix: {suffix: count}}
 
-            for word in self.vocab:
+            for word, freq in self.vocab.items():
                 word = "!" + word # Add start token
                 for i in range(len(word) - n + 1):
                     ngram = word[i:i+n]
                     # Increment count for ngram
-                    chargram_model[ngram[:-1]][ngram[-1]] += 1
+                    chargram_model[ngram[:-1]][ngram[-1]] += freq
+        
+            chargram_models[n] = chargram_model
+
+        print(f"Finished training chargram model with chargram length {chargram_length}!")
+        return chargram_models
+    
+    def train_suffix_chargram_model(self, chargram_length=3):
+        '''Train a character n-gram model on text
+        Args:
+            n: int, char n-gram length
+        Returns:
+            chargram_models: dict, contains character n-gram models for all n <= chargram_length {n: model} 
+                - model: defaultdict, character n-gram model of type {prefix: {suffix: count}}
+        '''
+        print(f"Training chargram model with chargram length {chargram_length}...")
+        chargram_models = dict() # contains chargram_models for all cgram lengths <= chargram_length
+        for n in range(1, chargram_length + 1):
+            chargram_model = defaultdict(lambda: defaultdict(lambda: 0)) # {prefix: {suffix: count}}
+
+            for word, freq in self.suffix_freq.items():
+                word = "!" + word # Add start token
+                for i in range(len(word) - n + 1):
+                    ngram = word[i:i+n]
+                    # Increment count for ngram
+                    chargram_model[ngram[:-1]][ngram[-1]] += freq
         
             chargram_models[n] = chargram_model
 
         print(f"Finished training chargram model with chargram length {chargram_length}!")
         return chargram_models
 
-    def generate_word(self, mean_length, prefix = ""):
+    def generate_word(self, mean_length, init_prefix = ""):
         '''
         This function is for generating a non-word using the character n-gram model. We will:
         1. Sample the length of the non-word from a Poisson centered around mean_length
@@ -109,49 +143,54 @@ class GlobalMorphologicalNoiser(Noise):
 
         # Sample length of non-word from Poisson, must be at least 1
 
-        length = max(1, np.random.poisson(mean_length))
+        length = max(1, rng.poisson(mean_length))
         length += 1
-        word = "!" + prefix
+        word = "!" + init_prefix
 
-        while word == "!" or word[1:].lower() in self.vocab:
+        # while word == "!" + init_prefix:
             # If generated word in vocab, generate another word
-            word = "!"
-            for _ in range(length):
-                if len(word) < self.chargram_length-1:
-                    # If the word is shorter than the length of the chargram model, 
-                    # we will apply chargram model of the length of the word
-                    chargram_model = self.chargram_models[len(word) + 1]
-                    prefix = word
-                else:
-                    # If the word is longer than the prefix of the chargram model, 
-                    # we will apply the chargram model of the length of the model
-                    chargram_model = self.chargram_models[self.chargram_length]
-                    prefix = word[-(self.chargram_length-1):]
-                while len(list(chargram_model[prefix].keys())) == 0:
-                    # Backing off to shorter chargram models
-                    chargram_model = self.chargram_models[len(prefix)]
-                    prefix = prefix[1:]
-                # print(list(chargram_model[prefix].keys()))
-                # print(len(list(chargram_model[prefix].keys())))
+        # word = "!"
+        for _ in range(length):
+            if len(word) < self.chargram_length-1:
+                # If the word is shorter than the length of the chargram model, 
+                # we will apply chargram model of the length of the word
+                chargram_model = self.chargram_models[len(word) + 1]
+                prefix = word
+            else:
+                # If the word is longer than the prefix of the chargram model, 
+                # we will apply the chargram model of the length of the model
+                chargram_model = self.chargram_models[self.chargram_length]
+                prefix = word[-(self.chargram_length-1):]
+            while len(list(chargram_model[prefix].keys())) == 0:
+                # Backing off to shorter chargram models
+                chargram_model = self.chargram_models[len(prefix)]
+                prefix = prefix[1:]
+            # print(list(chargram_model[prefix].keys()))
+            # print(len(list(chargram_model[prefix].keys())))
 
-                # Sample the next character based on the prefix
-                try:
-                    next_char = np.random.choice(list(chargram_model[prefix].keys()), p=np.array(list(chargram_model[prefix].values())) / sum(chargram_model[prefix].values()))
-                except:
-                    print(f"Error: {prefix} not in chargram model")
-                    # print(f"Chargram model: {chargram_model}")
-                    print(f"Word: {word}")
-                    print(f"Length: {length}")
-                    print(f"Mean Length: {mean_length}")
-                    print(f"Chargram Length: {self.chargram_length}")
-                    print(f"Prefix: {prefix}")
-                    print(f"{not chargram_model[prefix]}")
-                    print(f"Chargram model: {chargram_model[prefix].keys()}")
+            # Sample the next character based on the prefix
+            try:
+                # next_char = rng.choice(list(chargram_model[prefix].keys()), \
+                #         p=np.array(list(chargram_model[prefix].values())) / sum(chargram_model[prefix].values()))
+                # Pick max char
 
-                    raise
-                word += next_char
+                next_char = max(chargram_model[prefix], key=chargram_model[prefix].get)
 
-        return word[1:]
+            except:
+                print(f"Error: {prefix} not in chargram model")
+                # print(f"Chargram model: {chargram_model}")
+                print(f"Word: {word}")
+                print(f"Length: {length}")
+                print(f"Mean Length: {mean_length}")
+                print(f"Chargram Length: {self.chargram_length}")
+                print(f"Prefix: {prefix}")
+                print(f"{not chargram_model[prefix]}")
+                print(f"Chargram model: {chargram_model[prefix].keys()}")
+
+                raise
+            word += next_char
+
+        return word[len(init_prefix) + 1:]
     
 
     def get_vocab(self, text_file):
@@ -200,7 +239,7 @@ class GlobalMorphologicalNoiser(Noise):
         suffix_freq = defaultdict(lambda: 0)
         most_frequent_word_per_suffix = defaultdict(lambda: ("", 0))
         for word in self.vocab:
-            for i in range(1, len(word) - 1):
+            for i in range(1, round(len(word)/2)): #only allow half the word to be a suffix
                 suffix_freq[word[-i:]] += self.vocab[word]
                 if self.vocab[word] > most_frequent_word_per_suffix[word[-i:]][1]:
                     most_frequent_word_per_suffix[word[-i:]] = (word, self.vocab[word])
@@ -209,13 +248,76 @@ class GlobalMorphologicalNoiser(Noise):
 
     def filter_suffix_frequency(self):
         '''
+        Filter
         Remove all suffixes with a frequency <= 1
         '''
-        self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if freq > 3}
+        self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if freq > 20}
         self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
         self.suffix_freq = defaultdict(lambda: 0, self.suffix_freq)
 
+    def filter_suffix_topk(self):
+        '''
+        Filter
+        Take only top 200 suffixes
+        '''
+        self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
+        sorted_suffixes = sorted(self.suffix_freq, key=lambda x: self.suffix_freq[x], reverse=True)
+        self.suffix_freq = {suffix: self.suffix_freq[suffix] for suffix in sorted_suffixes[:200]}
+        self.suffix_freq = defaultdict(lambda: 0, self.suffix_freq)
+
+
+    def construct_suffix_map_with_char_lm(self):
+        '''
+        We'll first sample the suffixes to be swapped based on the log frequency of the suffixes.
+        Then we'll map each chosen suffix to a new suffix
+        Returns:
+            suffix_map: dict, mapping of old suffix to new suffix        
+        '''
+        suffix_map = {
+            suffix: suffix for suffix in self.suffix_freq
+        }
+
+        for suffix in tqdm(suffix_map):
+            if random.random() > self.theta_morph_global:
+                continue
+            most_freq_word = self.most_frequent_word_per_suffix[suffix][0]
+            prefix = most_freq_word[:-len(suffix)]
+            new_suffix = self.generate_word(len(suffix), init_prefix = prefix)
+            suffix_map[suffix] = new_suffix
+
+            # print(f"Suffix: {suffix}")
+            # print(f"Most frequent word: {most_freq_word}")
+            # print(f"Prefix: {prefix}")
+            # print(f"New Suffix: {new_suffix}")
+
+        return suffix_map
+
     def construct_suffix_map(self):
+        '''
+        We'll toss a coin for each suffix based on theta_morph_global.
+        Then we'll map each chosen suffix to a new suffix
+        Returns:
+            suffix_map: dict, mapping of old suffix to new suffix        
+        '''
+        suffix_map = {
+            suffix: suffix for suffix in self.suffix_freq
+        }
+
+        for suffix in tqdm(suffix_map):
+            if random.random() > self.theta_morph_global:
+                continue
+            new_suffix = self.phon_noiser.apply_noise_for_sure(suffix)
+            suffix_map[suffix] = new_suffix
+
+            # print(f"Suffix: {suffix}")
+            # print(f"Most frequent word: {most_freq_word}")
+            # print(f"Prefix: {prefix}")
+            # print(f"New Suffix: {new_suffix}")
+
+        return suffix_map
+
+
+    def construct_suffix_map_biased(self):
         '''
         We'll first sample the suffixes to be swapped based on the log frequency of the suffixes.
         Then we'll map each chosen suffix to a new suffix
@@ -244,21 +346,33 @@ class GlobalMorphologicalNoiser(Noise):
         print(f"Total log frequency of vocab length: {total_log_freq_vocab_length}")
         ## Now we'll sample the number of suffixes to be swapped from binomial(total_log_freq_vocab_length, theta_morph_global)
         # num_suffixes = np.random.binomial(total_log_freq_vocab_length, self.theta_morph_global)
-        num_suffixes = np.random.binomial(len(suffixes), self.theta_morph_global)
+        num_suffixes = rng.binomial(len(suffixes), self.theta_morph_global)
         print(f"Number of suffixes to be swapped: {num_suffixes}")
         # Sample the suffixes
-        sampled_suffixes = np.random.choice(suffixes, num_suffixes, p=norm_weights, replace=False)
+        ## We do this with replacement, since sampling without replacement makes no sense to me.
+        ## Also because we want theta to basically be some idea of the fraction of suffix mass as such
+        ## that gets swapped out. We want more common suffixes to 'take up' more mass if they are sampled
+        ## This will happen automatically in sampling with replacement since the more common suffixes will
+        ## be sampled more often.
+        sampled_suffixes = rng.choice(suffixes, num_suffixes, p=norm_weights, replace=True)
 
         # Now we'll map each suffix to a new suffix
         ## We would like to condition the new suffix on the stems of the words preceding the suffix.
         ## In practice, we only take the most common such stem and use that as a prefix.
-        for suffix in sampled_suffixes:
-            prefix = self.most_frequent_word_per_suffix[suffix][0]
-            new_suffix = self.generate_word(len(suffix), prefix = prefix)
+        for suffix in tqdm(set(sampled_suffixes)):
+            most_freq_word = self.most_frequent_word_per_suffix[suffix][0]
+            prefix = most_freq_word[:-len(suffix)]
+            new_suffix = self.generate_word(len(suffix), init_prefix = prefix)
             suffix_map[suffix] = new_suffix
 
+            # print(f"Suffix: {suffix}")
+            # print(f"Most frequent word: {most_freq_word}")
+            # print(f"Prefix: {prefix}")
+            # print(f"New Suffix: {new_suffix}")
+
         return suffix_map
-     
+    
+
     def construct_new_vocab(self):
         '''
         For every word, we'll consider all its suffixes (if present in self.suffix_frequency).
@@ -267,6 +381,7 @@ class GlobalMorphologicalNoiser(Noise):
         '''
         vocab_map = dict()
         for word in self.vocab:
+            
 
             if self.is_word_functional(word):
                 vocab_map[word] = word
@@ -281,10 +396,12 @@ class GlobalMorphologicalNoiser(Noise):
                 continue
 
             # Get weights based on log frequency
-            weights = np.log(np.array([self.suffix_freq[suffix] for suffix in suffixes]) + 1)
+            # weights = np.log(np.array([self.suffix_freq[suffix] for suffix in suffixes]) + 1)
+            # Get weights based on log frequency
+            weights = np.array([self.suffix_freq[suffix] for suffix in suffixes])
             weights = weights / sum(weights)
             # Sample a suffix
-            sampled_suffix = np.random.choice(suffixes, 1, p=weights)[0]
+            sampled_suffix = rng.choice(suffixes, 1, p=weights)[0]
             # Swap out the suffix
             new_word = word[:-len(sampled_suffix)] + self.suffix_map[sampled_suffix]
             vocab_map[word] = new_word
@@ -316,7 +433,6 @@ class GlobalMorphologicalNoiser(Noise):
                                                  and self.vocab_map[word] != word]) / stats["content_words"], 2)
         return stats
    
-
     def apply_noise(self, input):
         '''Apply noise to input
         Args:
@@ -357,6 +473,11 @@ class GlobalMorphologicalNoiser(Noise):
             stats = self.get_vocab_map_stats()
             with open(f"{self.output_dir}/vocab_stats.json", "w") as f:
                 json.dump(stats, f, indent=2, ensure_ascii=False)
+
+            # Record suffix freq
+            with open(f"{self.output_dir}/suffix_freq.json", "w") as f:
+                sorted_suffixes = sorted(self.suffix_freq, key=lambda x: self.suffix_freq[x], reverse=True)
+                json.dump({suffix: self.suffix_freq[suffix] for suffix in sorted_suffixes}, f, indent=2, ensure_ascii=False)
 
 
     def find_posterior(self, text1, text2):

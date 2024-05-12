@@ -33,8 +33,12 @@ class GlobalPhonologicalNoiser(Noise):
 
         # Creates a mapping from each character to a set of characters that are equivalent to it in the script
         self.target_chars = self.create_equivalence_set_for_script_chars()
+        self.filter_target_chars()
 
         self.chargram_map = self.construct_charmap_with_context()
+
+        # For recording purposes
+        self.vocab_map = dict()
 
         if hasattr(self, "output_dir"):
             os.makedirs(self.output_dir, exist_ok=True)
@@ -83,13 +87,14 @@ class GlobalPhonologicalNoiser(Noise):
         return new_char
     
     def sample_new_char(self, char):
-        '''Sample a new character
+        '''Samples a new character. If the character is in the target set, samples from the target set. 
+
         Args:
             char: str, character to sample new character for
         Returns:
             str, new character, maintain casing
         '''
-        if self.target_chars[char]:
+        if len(self.target_chars[char]) != 0:
 
             new_char = random.choice(list(self.target_chars[char.lower()]))
         
@@ -97,10 +102,10 @@ class GlobalPhonologicalNoiser(Noise):
                 new_char = new_char.upper()
             if char.islower():
                 new_char = new_char.lower()
-            print(f"Swapping {char} with {new_char}")
+            # print(f"Swapping {char} with {new_char}")
             return new_char
         
-        return self.sample_new_char_at_random(char)
+        return char
 
 
     def create_equivalence_set_for_script_chars(self):
@@ -118,23 +123,51 @@ class GlobalPhonologicalNoiser(Noise):
         
         target_chars = defaultdict(lambda: set())
         for char in self.character_set:
+
             if char in self.script_to_ipa_chars:
-                ipa_set = self.script_to_ipa_chars[char] # set of ipa characters that char maps to
+                ipa_set = self.script_to_ipa_chars[char] # set of ipa characters that char maps to                    
                 for ipa_char in ipa_set:
                     # Get equivalence classes for ipa_char
                     ipa_eq_chars = self.equivalence_classes_ipa_per_char[ipa_char] # set of ipa characters that are equivalent to ipa_char
                     for ipa_eq_char in ipa_eq_chars:
                         script_eq_chars = self.ipa_to_script_chars[ipa_eq_char] # set of script characters that are equivalent to ipa_eq_char
                         target_chars[char].update(script_eq_chars)
+                        # if char == "r":
+                        #     print(ipa_set)
+                        #     print(f"ipa char: {ipa_char}")
+                        #     print(f"ipa_eq_chars: {ipa_eq_chars}")
+                        #     print(f"script_eq_chars: {script_eq_chars}")
+                        #     print(f"target_chars: {target_chars[char]}")
+                        
 
         for char in self.character_set:
             target_chars[char] = target_chars[char] - {char}
 
         # print(f"Target Chars: {target_chars}")
+        # # Pretty print target_chars
+        # for char in target_chars:
+        #     target_chars[char] = list(target_chars[char])
+        #     target_chars[char].sort()
+        #     print(f"CHAR: {char}, TARGET CHARS: {target_chars[char]}")
+
+        #     print("\n\n")
 
         return target_chars
 
-    
+    def filter_target_chars(self):
+        '''
+        Here, we remove certain characters from the target set, because they're rare in the script
+        '''
+        # Devanagari
+        exclude_set_dev = {"क़", "ख़", "ग़", "ज़", "ड़", "ढ़", "फ़", "य़", "ॠ", "ॡ", "ॢ", "ॣ", "।", "॥", \
+                           "०", "१", "२", "३", "४", "५", "६", "७", "८", "९", "॰", "ॱ", "ॲ", "ॳ", "ॴ", "ॵ", "ॶ", "ॷ", "ॸ", "ॹ", "ॺ", "ॻ", "ॼ", "ॽ", "ॾ", "ॿ",\
+                            "ञ", "ङ"}
+        exclude_set_latin = {"ÿ"}
+
+        exclude_set = exclude_set_dev.union(exclude_set_latin)
+        for char, target_set in self.target_chars.items():
+            self.target_chars[char] = target_set - exclude_set
+
                 
     def construct_charmap_with_context(self):
         '''
@@ -146,7 +179,11 @@ class GlobalPhonologicalNoiser(Noise):
             if random.random() < self.theta_phon:
                 # We'll swap out the middle character
                 new_char = self.sample_new_char(ngram[1])
+                if new_char == ngram[1]:
+                    new_char = '0'
                 chargram_map[ngram] = ngram[0] + new_char + ngram[2]
+            else:
+                chargram_map[ngram] = ngram
         
         # print(f"Chargram Map: {chargram_map}")
         return chargram_map
@@ -169,12 +206,15 @@ class GlobalPhonologicalNoiser(Noise):
     def apply_noise(self, input):
         '''Apply phonological noise to input
         Args:
-            input: str, input text
+            input: str, input text, or list of input texts
         Returns:
             str, noised text
         '''
         # Apply noise
-        words = input.split()
+        if isinstance(input, str):
+            words = input.split()
+        else:
+            words = input
         noised_words = list()
         for word in words:
             noised_word = ""
@@ -188,12 +228,71 @@ class GlobalPhonologicalNoiser(Noise):
                 else:
                     ngram = word[i-1:i+2]
                     if ngram in self.chargram_map:
-                        noised_word += self.chargram_map[ngram][1]
+                        if self.chargram_map[ngram][1] != '0':
+                            noised_word += self.chargram_map[ngram][1]
+                        else:
+                            pass # Don't add the middle character - delete
                     else:
                         noised_word += word[i]
-        
+
+            self.vocab_map[word[1:-1]] = noised_word # All input words go through this function
             noised_words.append(noised_word)
         return " ".join(noised_words)
+
+    def apply_noise_for_sure(self, input):
+        '''
+        Change at least one character in the input for sure
+        First, we apply noise as per usual. If nothing changes,
+        we use the IPA maps directly to swap out at least one character
+        Args:
+            input: str, input text
+        Returns:
+            str, noised text
+        '''
+        noised = self.apply_noise(input)
+        if noised != input:
+            return noised
+
+        # print(f"SWAPPING SOMETHING: {input}")
+        noised_word = ""
+        if not self.is_valid_word(input):
+            return input
+        for idx, c in enumerate(input):
+            new_char = self.sample_new_char(c)
+            if c != new_char:
+                noised_word = input[:idx] + new_char + input[idx+1:]
+
+                # print(f"Swapped: {noised_word}")
+                return noised_word
+        
+        # If we reach here, we haven't changed anything
+        idx = random.randint(0, len(input) - 1)
+        new_char = self.sample_new_char_at_random(input[idx])
+        noised_word = input[:idx] + new_char + input[idx+1:]
+        # print(f"Swapped: {noised_word}")
+        assert noised_word != input
+        return noised_word
+            
+
+
+
+
+    def get_vocab_chargram_map_stats(self):
+        '''Recording purposes'''
+        stats = dict()
+        stats["theta_phon"] = self.theta_phon
+        # Number of words changed 
+        stats["num_words_changed"] = len([word for word in self.vocab_map if self.vocab_map[word] != word])
+        stats["total_words"] = len(self.vocab_map)
+        stats["frac_noised_words"] = stats["num_words_changed"] / len(self.vocab_map)
+        # Number of chargrams changed
+        stats["num_chargrams_changed"] = len([cgram for cgram in self.chargram_map if self.chargram_map[cgram] != cgram])
+        stats["total_chargrams"] = len(self.chargram_map)
+        stats["frac_noised_chargrams"] = stats["num_chargrams_changed"] / stats["total_chargrams"]
+        
+        return stats
+
+
     
     def record_noiser_artifacts(self):
         '''Record vocab map, number of words switched out'''
@@ -206,9 +305,13 @@ class GlobalPhonologicalNoiser(Noise):
 
             with open(f"{self.output_dir}/chargram_map.json", "w") as f:
                 json.dump(self.chargram_map, f, indent=2, ensure_ascii=False)
-            # stats = self.get_vocab_map_stats()
-            # with open(f"{self.output_dir}/stats.json", "w") as f:
-            #     json.dump(stats, f, indent=2, ensure_ascii=False)
+            
+            with open(f"{self.output_dir}/vocab_map.json", "w") as f:
+                json.dump(self.vocab_map, f, indent=2, ensure_ascii=False)
+
+            stats = self.get_vocab_chargram_map_stats()
+            with open(f"{self.output_dir}/stats.json", "w") as f:
+                json.dump(stats, f, indent=2, ensure_ascii=False)
     
     def find_posterior(self, text1, text2):
         '''Find the posterior MLE estimate of self.noise_params given text1 and text2

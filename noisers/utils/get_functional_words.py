@@ -15,7 +15,8 @@ files = {
     "ind": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Indonesian-GSD/id_gsd-ud-train.conllu",
     "eng": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_English-EWT/en_ewt-ud-train.conllu",
     "rus": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu",
-    "esp": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Spanish-GSD/es_gsd-ud-train.conllu",
+    "spa": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Spanish-GSD/es_gsd-ud-train.conllu",
+    "fra": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_French-GSD/fr_gsd-ud-train.conllu",
 
 }
 
@@ -27,7 +28,8 @@ outpath_paths ={
     "ind": f"{OUTDIR}/id_gsd-ud-train.json",
     "eng": f"{OUTDIR}/en_ewt-ud-train.json",
     "rus": f"{OUTDIR}/ru_syntagrus-ud-train.json",
-    "esp": f"{OUTDIR}/es_gsd-ud-train.json",
+    "spa": f"{OUTDIR}/es_gsd-ud-train.json",
+    "fra": f"{OUTDIR}/fr_gsd-ud-train.json",
 
 }
 
@@ -42,6 +44,7 @@ def read_conllu(filename):
 
 if __name__ == "__main__":
     for lang, file in files.items():
+        print(f"Processing: {lang}...")
         word2tags = defaultdict(lambda: defaultdict(lambda: 0))
         sentences = read_conllu(file)
         for sentence in sentences:

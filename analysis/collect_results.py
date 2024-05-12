@@ -42,13 +42,16 @@ Example results file:
 import os
 import pandas as pd
 import json
+from collections import defaultdict
 
 def task_to_metric(task_name):
 
     if "flores200" in task_name:
         return "bleu"
-    else:
-        return "acc"
+
+    if "truthful" in task_name:
+        return "mc2"
+    return "acc"    
   
 
 
@@ -69,7 +72,7 @@ def get_metric_from_results_file(results, task_name):
         for _, task_results in exp_results["results"].items():
             metric = task_to_metric(task_name)
     val = task_results[metric]
-    if metric == "acc" and val <= 1:
+    if metric in ["acc", "mc2"] and val <= 1:
         val = val * 100
 
     return round(val, 2)
@@ -87,6 +90,10 @@ def get_results(param_set, folder_name_expr, task_name):
     all_results = dict()
     for param_value in param_set:
         folder_name = folder_name_expr.replace("<placeholder>", param_value)
+        if not os.path.exists(folder_name):
+            print(f"Folder {folder_name} does not exist")
+            all_results[param_value] = -1
+            continue
         for file in os.listdir(folder_name):
             if task_name in file:
                 with open(os.path.join(folder_name, file), "r") as f:
@@ -98,6 +105,25 @@ def get_results(param_set, folder_name_expr, task_name):
 
     print(all_results)
     return pd.DataFrame(all_results, index=[0])
+
+def get_results_from_folder(folder_name, task_name):
+    '''Get results from experiment output files
+    Args:
+        folder_name: str, folder name expression, with <placeholder> for param value
+        task_name: str, task name
+    Returns:
+        pd.DataFrame, results
+    '''
+    result = -1
+    for file in os.listdir(folder_name):
+        if task_name in file:
+            with open(os.path.join(folder_name, file), "r") as f:
+                results = json.load(f)
+                result = get_metric_from_results_file(results, task_name)
+        
+
+    return result
+
 
 
 def print_in_vertical_row(param_set, results):
@@ -114,17 +140,31 @@ def print_in_vertical_row(param_set, results):
     pretty_results = pretty_results.replace(" ", "\n")
     print(pretty_results)
 
+def pretty_print_baseline(results, langs, tasks):
+
+    for task in tasks:
+        print(f"TASK: {task}")
+        for lang in langs:
+            print(f"{results[task][lang]}")
+        print("\n\n")
+
 
 if __name__ == "__main__":
     param_set = ["0.01", "0.05", "0.10", "0.15", "0.3"]
-    langs = ["en", "hi", "id"]
-    tasks = ["flores200", "xstory_cloze", "xnli"]
+    # param_set = ["0.2", "0.4", "0.6", "0.8", "1"]
+    # langs = ["en", "hi", "id", "fr", "es", "de", "ar", "ru"]
+    # langs = ["hi", "ru", "ar", "es", "de", "id", "en", "fr"]
+    langs = ["es", "hi"]
+    # tasks = ["xstory_cloze", "xnli", "arc", "hellaswag", "mmlu", "xwinograd", "xcopa", "xnli_mcq", "truthfulqa"]
+    tasks = ["xnli_mcq"]
 
-    # Phon noise type:
     for lang in langs:
         for task in tasks:
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
-            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=1.0~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=1.0~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morph-lang={lang},theta_morph_global=<placeholder>~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
+            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
             if task == "flores200":
                 task = f"flores200-{lang}-en"
             else:
@@ -133,6 +173,25 @@ if __name__ == "__main__":
             results = get_results(param_set, folder_name_expr, task)
             print(results)
             print_in_vertical_row(param_set, results)
+    
+
+    # Baseline results:
+    # lang_task = defaultdict(lambda: dict())
+    # for lang in langs:
+    #     for task in tasks:
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/baselines~limit-300/"
+    #         folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morph-lang={lang},theta_morph_global=<placeholder>~limit-300"
+    #         if task == "flores200":
+    #             task_name = f"flores200-{lang}-en"
+    #         else:
+    #             task_name = f"{task}_{lang}"
+    #         print(f"LANG: {lang}, TASK: {task}")
+    #         result = get_results_from_folder(folder_name_expr, task_name)
+    #         lang_task[task][lang] = result
+    
+    # print(lang_task)
+    # pretty_print_baseline(lang_task, langs, tasks)
 
     # folder_name_expr = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/hi/lexical-lang=hi,theta_content_global=<placeholder>,theta_func_global=1.0~limit-300"
     # task_name = "flores200"

@@ -16,6 +16,7 @@ def normalize_lang_codes(lang):
         "ar": "ara",
         "ru": "rus",
         "es": "spa",
+        "fr": "fra",
         "cs": "ces",
         "id": "ind",
         "ca": "cat",
@@ -65,6 +66,7 @@ def get_lang_name(lang_code):
         "bos": "Bosnian",
         "bul": "Bulgarian",
         "ces": "Czech",
+        "fra": "French",
     }
     return lang_map[lang_code]
 
@@ -86,7 +88,8 @@ def get_character_set(lang):
         "ara": "arabic",
         "rus": "cyrillic",
         "spa": "latin",
-        "ind": "latin"
+        "ind": "latin",
+        "fra": "latin",
     }
     
     script = lang_to_script[lang]
@@ -159,7 +162,7 @@ def ipa_char_maps():
     'v': {'v'},
     'w': {'w'},
     'x': {'ks'},
-    'y': {'j'},
+    'y': {'j', 'i'},
     'z': {'z'}
     }
 
@@ -175,8 +178,8 @@ def ipa_char_maps():
         'ऐ': {'aɪ'},
         'ओ': {'oː'},
         'औ': {'aʊ'},
-        'अं': {'əŋ', 'ŋ'},
-        'अः': {'əh', 'h'},
+        'अं': {'əŋ'},
+        'अः': {'əh'},
         'क': {'k'},
         'ख': {'kʰ'},
         'ग': {'ɡ'},
@@ -203,7 +206,7 @@ def ipa_char_maps():
         'भ': {'bʱ'},
         'म': {'m'},
         'य': {'j'},
-        'र': {'ɾ'},
+        'र': {'r'},
         'ल': {'l'},
         'व': {'v'},
         'श': {'ʃ'},
@@ -279,9 +282,52 @@ def ipa_char_maps():
         'v': {'b', 'β'},
         'w': {'w'},
         'x': {'ks', 'ɡz'},  # In words of foreign origin
-        'y': {'ʝ', 'i'},  # Variations depending on region and word
-        'z': {'θ', 's'}
+        'y': {'ʝ', 'j', 'i'},  # Variations depending on region and word
+        'z': {'s', 'z'}
     }
+
+    latin_to_ipa_set_french = {
+    'a': {'a', 'ɑ'},
+    'b': {'b'},
+    'c': {'k', 's'},
+    'd': {'d'},
+    'e': {'ə', 'e', 'ɛ'},
+    'f': {'f'},
+    'g': {'ɡ'},
+    'h': {''},  # In French, 'h' is mostly silent
+    'i': {'i', 'j'},
+    'j': {'ʒ'}, 
+    'k': {'k'},
+    'l': {'l'},
+    'm': {'m'},
+    'n': {'n'},
+    'o': {'o', 'ɔ'},
+    'p': {'p'},
+    'q': {'k'},
+    'r': {'ʁ', 'ʀ', 'ʀ̥'},  # The French 'r' can vary in pronunciation
+    's': {'s', 'z'},
+    't': {'t'},
+    'u': {'y', 'u'}, 
+    'v': {'v'},
+    'w': {'w'},
+    'x': {'ks'},  # Rare in French
+    'y': {'i', 'j', 'ɥ'},
+    'z': {'z'},
+    'à': {'a'},
+    'â': {'ɑ'},  # In some French accents
+    'ç': {'s'},  # Before 'a', 'o', or 'u'
+    'è': {'ɛ'},
+    'é': {'e'},
+    'ê': {'ɛ'},  # In some French accents
+    'ë': {'ɛ'},  # In some French accents
+    'î': {'i'},  # In some French accents
+    'ï': {'i'},  # In some French accents
+    'ô': {'o'},  # In some French accents
+    'ù': {'y', 'u'},  # In some French accents
+    'û': {'y', 'u'},  # In some French accents
+    'ü': {'y'},  # In some French accents
+    'ÿ': {'i'},  # In some French accents
+}
 
     cyrillic_to_ipa_set_russian = {
         'а': {'a'},
@@ -360,6 +406,8 @@ def ipa_char_maps():
 
     }
 
+    # Resample if not in alphabet
+
     latin_to_ipa_set_german = {
     'a': {'a', 'aː'},
     'b': {'b'},
@@ -401,7 +449,8 @@ def ipa_char_maps():
         'spa': latin_to_ipa_set_spanish,
         'rus': cyrillic_to_ipa_set_russian,
         'ara': arabic_to_ipa_set_msa,
-        'deu': latin_to_ipa_set_german
+        'deu': latin_to_ipa_set_german,
+        'fra': latin_to_ipa_set_french,
     }
 
     ipa_to_script_chars = defaultdict(lambda: defaultdict(lambda: set()))
@@ -426,29 +475,166 @@ def get_equivalence_classes_ipa():
             'ɑ', 'h', 'ɡʱ', 'ʃ', 'tɕ', 'ø', 'ɭ', 't̪ʰ', 'd͡ʒ', 'ʕ', \
             'ʊ', 'ɲ', 'b', 'ɔ', 'm', 'e', 't͡ʃʰ', 't', 'i', 'ʈʰ', 'k', \
             'ɛ', 'jo', 'æ', 'r', 'x', 'əh', 'ɡ', 'z', 'un', 'ʉ', 'ʦ', 'øː', \
-            'ħ', 'eː', 'ɪ', 'β', 'ŋ', 'ðˤ', 'y', 'sˤ', 'ɡz', 'θ', 'dʒ', 'n', 'kv'
+            'ħ', 'eː', 'ɪ', 'β', 'ŋ', 'ðˤ', 'y', 'sˤ', 'ɡz', 'θ', 'dʒ', 'n', 'kv', 'ɥ'
     }
 
     # Still missing from below:
     # {'jo','ju','je', 'ja', 'kv'}
-    ipa_equivalence_classes = {
-        # Consonants:
-        'bilabial_labiodental': {'b', 'bʱ', 'p', 'pʰ', 'ɓ', 'f', 'v', 'β', 'w'},
-        # 'labiodental' : {'f', 'v', 'β'},
-        'dental_alveolar': {'d', 't', 'd̪', 't̪', 's', 'z', 'ɾ', 'ɖ', 'ɭ', \
-                         'ʈ', 'dʒ', 'dˤ', 'ɖʱ', 'ðˤ', 't̪ʰ', 'tˤ', 't͡ʃʰ', 'tɕ', 't͡s', 'ʈʰ', 'd̪ʱ', 'θ', 'ð', 'd͡ʒʱ', 'd͡ʒɲ'},
-        'nasals': {'m', 'n', 'ɲ', 'ŋ', 'ɳ', 'd͡ʒɲ'},
-        'postalveolar_palatal': {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', 'ç', 'ɕtɕ', 'ʂ', 'ts', 'ks', 'ɡz', 'ʐ', 'kʂ', 'ʝ', 'sˤ', 'ʦ'},
-        'retroflex': {'ɽ', 'ɭ', 'r', 'l', 'rɪ', 'r̩'},
-        # 'palatal': {'j', 'ɲ', 'ç'},
-        'velar': {'k', 'kʰ', 'ɡ', 'ɡʱ', 'x', 'ɣ', 'ks', 'ɡz'},
-        'uvular_pharyngeal_glottal': {'q', 'χ', 'ʁ', 'ʕ', 'ħ', 'ʔ', 'h'},
-        # 'pharyngeal/Glottal': {'ʕ', 'ħ', 'ʔ'},
-        # Vowels:
-        'front': {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', 'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ', 'in'},
-        'central': {'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', 'əŋ'},
-        'back': {'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', 'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'un', 'aː', 'aʊ', 'a'}
-    }
+
+    # ipa_equivalence_classes = {
+    #     # Consonants:
+    #     'bilabial_labiodental': {'b', 'bʱ', 'p', 'pʰ', 'ɓ', 'f', 'v', 'β', 'w'},
+    #     # 'labiodental' : {'f', 'v', 'β'},
+    #     'dental_alveolar': {'d', 't', 'd̪', 't̪', 's', 'z', 'ɾ', 'ɖ', 'ɭ', \
+    #                      'ʈ', 'dʒ', 'dˤ', 'ɖʱ', 'ðˤ', 't̪ʰ', 'tˤ', 't͡ʃʰ', 'tɕ', 't͡s', 'ʈʰ', 'd̪ʱ', 'θ', 'ð', 'd͡ʒʱ', 'd͡ʒɲ'},
+    #     'nasals': {'m', 'n', 'ɲ', 'ŋ', 'ɳ', 'd͡ʒɲ'},
+    #     'postalveolar_palatal': {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', 'ç', 'ɕtɕ', 'ʂ', 'ts', 'ks', 'ɡz', 'ʐ', 'kʂ', 'ʝ', 'sˤ', 'ʦ'},
+    #     'retroflex': {'ɽ', 'ɭ', 'r', 'l', 'rɪ', 'r̩'},
+    #     # 'palatal': {'j', 'ɲ', 'ç'},
+    #     'velar': {'k', 'kʰ', 'ɡ', 'ɡʱ', 'x', 'ɣ', 'ks', 'ɡz'},
+    #     'uvular_pharyngeal_glottal': {'q', 'χ', 'ʁ', 'ʕ', 'ħ', 'ʔ', 'h'},
+    #     # 'pharyngeal/Glottal': {'ʕ', 'ħ', 'ʔ'},
+    #     # Vowels:
+    #     'front': {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', 'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ', 'in'},
+    #     'central': {'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', 'əŋ'},
+    #     'back': {'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', 'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'un', 'aː', 'aʊ', 'a'}
+    # }
+
+    # Equivalence classing of IPA characters
+    '''
+        # Bilabials
+        # 'bilabial_labiodental': {'b', 'bʱ', 'p', 'pʰ', 'ɓ', 'f', 'v', 'β', 'w'},
+        ## Aspiration
+        {'p', 'pʰ'},
+        {'b', 'bʱ'},
+        {'β', 'bʱ'},
+        {'ɓ', 'bʱ'}, #'ɓ' is a voiced bilabial implosive 
+
+        ## Voicing 
+        {'b', 'p'},
+        {'bʱ', 'pʰ'},
+        {'ɓ', 'p'}, 
+        {'β', 'p'}
+
+        ## Manner
+        {'β','b', 'ɓ'},
+
+        # Labiodentals
+        ## Place (and manner)
+        {'b', 'β', 'ɓ', 'v', 'w'},
+        {'p', 'f', 'w'},
+        
+        # Dentals, alveolars, postalveolars, palatals, retroflexes
+        # {'d', 't', 'd̪', 't̪', 's', 'z', 'ɾ', 'ɖ', 'ɭ', \
+        # 'ʈ', 'dʒ', 'dˤ', 'ɖʱ', 'ðˤ', 't̪ʰ', 'tˤ', 't͡ʃʰ', 'tɕ', 't͡s', 'ʈʰ', 'd̪ʱ', 'θ', 'ð', 'd͡ʒʱ'},
+        # {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', \
+        #  'ç', 'ɕtɕ', 'ʂ', 'ts', 'ks', 'ɡz', 'ʐ', 'kʂ', 'ʝ', 'sˤ', 'ʦ'},
+
+        ## Aspiration (and place)
+        {'t', 'ʈ', 't̪', 't̪ʰ', 'ʈʰ', 'θ', 'tˤ', },
+        {'d', 'ɖʱ', 'd̪', 'd̪ʱ', 'ð', 'dˤ', 'ðˤ'},
+        {'s', 't͡ʃʰ'},
+        {'dʒ', 'd͡ʒʱ'},
+
+        ## Voicing (and place)
+        {'tˤ', 'dˤ'},
+        {'d', 'd̪', 'ð', 'ɖ', 't', 't̪', 'ʈ', 'θ', 'ɾ'},
+        {'s', 'z', 'ʒ', 'ʑ', 'ʐ'},
+        {'t͡ɕ', 'd͡ʑ'},
+        {'ks', 'ɡz'},
+        
+        ## Manner (and place)
+        {'s', 'dʒ', 'ts', 't͡s', 'ʃ', 'ʂ', 'sˤ', 'ʦ'},
+        {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', 'ʐ', 'ɕtɕ', 'ʝ'},
+        {'ks', 'ɡz', 'kʂ'}
+
+        # Approximants - putting all approximants together, some place change as well
+        {'ɽ', 'r', 'rɪ', 'r̩', 'ʁ'},
+        {'ɭ', 'l'}, 
+        {'l', 'j'}, # just here because l will have nowhere to go in many languages
+
+        # Velars
+        # {'k', 'kʰ', 'ɡ', 'ɡʱ', 'x', 'ɣ', 'ks', 'ɡz'},
+
+        ## Aspiration
+        {'k', 'kʰ'},
+        {'ɡ', 'ɡʱ'},
+
+        ## Voicing
+        {'ɡ', 'k'},
+        {'ɡʱ', 'kʰ'},
+        {'ɣ', 'x'},
+        {'ɡz', 'ks'},
+
+        ## Manner
+        {'ɡ', 'ɣ', 'ɡʱ'},
+        {'k', 'x', 'kʰ'},
+
+        # Uvulars, pharyngeals, glottals
+        {'q', 'χ', 'ʁ', 'ʕ', 'ħ', 'ʔ', 'h', 'əh'}, \
+        
+        # Nasals
+        {'m', 'n', 'ɲ', 'ŋ', 'ɳ'},
+        {'m', 'n', 'ɲ', 'ŋ', 'ɳ'}, \
+        {'əŋ', 'in', 'un'}, \
+
+        # Vowels
+        # 'front': {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', 'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ', 'in'},
+        # 'central': {'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', 'əŋ'},
+        # 'back': {'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', 'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'un', 'aː', 'aʊ', 'a'}
+        {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', \
+         'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ',\
+        'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', \
+        'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', \
+        'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'aː', 'aʊ', 'a', 'ɥ'}
+    '''
+    ipa_equivalence_classes = \
+        [ {'p', 'pʰ'}, \
+        {'b', 'bʱ'}, \
+        {'β', 'bʱ'}, \
+        {'ɓ', 'bʱ'},  \
+        {'b', 'p'}, \
+        {'bʱ', 'pʰ'}, \
+        {'ɓ', 'p'},  \
+        {'β', 'p'}, \
+        {'β','b', 'ɓ'}, \
+        {'b', 'β', 'ɓ', 'v', 'w'}, \
+        {'p', 'f', 'w'}, \
+        {'t', 'ʈ', 't̪', 't̪ʰ', 'ʈʰ', 'θ', 'tˤ'}, \
+        {'d', 'ɖʱ', 'd̪', 'd̪ʱ', 'ð', 'dˤ', 'ðˤ'}, \
+        {'s', 'ʃ'}, \
+        {'t͡ʃ', 't͡ʃʰ'}, \
+        {'dʒ', 'd͡ʒ', 'd͡ʒʱ'}, \
+        {'tˤ', 'dˤ'}, \
+        {'d', 'd̪', 'ð', 'ɖ', 't', 't̪', 'ʈ', 'θ'}, \
+        {'s', 'z', 'ʒ', 'ʑ', 'ʐ'}, \
+        {'t͡ɕ', 'd͡ʑ'}, \
+        {'ks', 'ɡz'}, \
+        {'s', 'dʒ', 'ts', 't͡s', 'ʃ', 'ʂ', 'sˤ', 'ʦ'}, \
+        {'ʃ', 'ʒ', 'd͡ʒ', 't͡ʃ', 't͡ɕ', 'd͡ʑ', 'ɕ', 'ʑ', 'j', 'ʐ', 'ɕtɕ', 'ʝ'}, \
+        {'ks', 'ɡz', 'kʂ'}, \
+        {'ɽ', 'r', 'rɪ', 'r̩', 'ʁ'}, \
+        {'ɭ', 'l'},  \
+        {'l', 'j'}, \
+        {'k', 'kʰ'}, \
+        {'ɡ', 'ɡʱ'}, \
+        {'ɡ', 'k'}, \
+        {'ɡʱ', 'kʰ'}, \
+        {'ɣ', 'x'}, \
+        {'ɡz', 'ks'}, \
+        {'ɡ', 'ɣ', 'ɡʱ'}, \
+        {'k', 'x', 'kʰ'}, \
+        {'q', 'χ', 'ʁ', 'ʕ', 'ħ', 'ʔ', 'h', 'əh'}, \
+        {'m', 'n', 'ɲ', 'ŋ', 'ɳ'}, \
+        {'əŋ', 'in', 'un'}, \
+        {'d͡ʒɲ', 'n', 'ɲ', 'ŋ', 'ɳ'}, \
+        {'i', 'e', 'ɛ', 'æ', 'ɪ', 'ø', 'y', 'œ', 'eː', \
+         'ɛː', 'øː', 'œː', 'ʏ', 'iː', 'ʊ', 'aɪ', 'yː', 'aʊ',\
+        'ə', 'ʉ', 'ɨ', 'ɵ', 'ɵː', 'əh', \
+        'ɑ', 'ɒ', 'ʌ', 'ɤ', 'o', 'u', 'ɔ', 'ɯ', \
+        'uː', 'oː', 'ɔː', 'ɯː', 'uː', 'oː', 'ɔː', 'aː', 'aʊ', 'a', 'ɥ'}
+    ]
+
 
     # Original, cleaner version by place of articulation
     # ipa_equivalence_classes = {
@@ -470,8 +656,9 @@ def get_equivalence_classes_ipa():
     # }
 
     # Equivalence class per character
+    ## Every character can go to another other character that it appears in an eqv set with
     ipa_equivalence_classes_per_char = defaultdict(lambda: set())
-    for _, chars in ipa_equivalence_classes.items():
+    for chars in ipa_equivalence_classes:
         for char in chars:
             ipa_equivalence_classes_per_char[char].update(chars)
 

@@ -201,18 +201,22 @@ class GlobalMorphologicalNoiser(Noise):
             words = line.strip().split()
             for word in words:
                 # Remove punctuation
-                word = word.strip(".,!?")
+                punctuation_and_bad_chars = "»«.,!?()[]{}\"'`:;'/\\-–—~_<>|@#$%^&*+=\u200b\u200c\u200d\u200e\u200f"
+                word = word.strip(punctuation_and_bad_chars)
                 # If word has numeric characters, skip
                 if any(char.isdigit() for char in word):
                     continue
                 # All characters in word must be in character set
                 if not all(char in self.character_set for char in word):
+                    print(f"Not in character set: {word}")
                     continue
                                 
                 vocab[word.lower()] += 1
         print(f"Finished initializing vocabulary from {text_file}!")
+        print(f"Length of vocab: {len(vocab)}")
 
         return vocab
+
 
     def get_tag2wordlist(self):
         '''Get tag2wordlist from the JSON file'''
@@ -239,7 +243,7 @@ class GlobalMorphologicalNoiser(Noise):
         suffix_freq = defaultdict(lambda: 0)
         most_frequent_word_per_suffix = defaultdict(lambda: ("", 0))
         for word in self.vocab:
-            for i in range(1, round(len(word)/2)): #only allow half the word to be a suffix
+            for i in range(1, round(len(word)/2) + 1): #only allow half the word to be a suffix
                 suffix_freq[word[-i:]] += self.vocab[word]
                 if self.vocab[word] > most_frequent_word_per_suffix[word[-i:]][1]:
                     most_frequent_word_per_suffix[word[-i:]] = (word, self.vocab[word])
@@ -381,11 +385,12 @@ class GlobalMorphologicalNoiser(Noise):
         '''
         vocab_map = dict()
         for word in self.vocab:
-            
 
-            if self.is_word_functional(word):
-                vocab_map[word] = word
-                continue
+            # We choose to also noise functional words because many languages have functional words that are
+            # morphologically complex. We want to capture this complexity in the noised text.
+            # if self.is_word_functional(word):
+            #     vocab_map[word] = word
+            #     continue
 
             # Get all suffixes of the word
             suffixes = [word[-i:] for i in range(1, len(word))]

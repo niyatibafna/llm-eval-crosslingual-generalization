@@ -64,13 +64,20 @@ def get_metric_from_results_file(results, task_name):
         pd.DataFrame, results
     '''
 
-    if len(results) != 1:
-      print("Results file should have only one experiment key")
-      print(results.keys())
+    # if len(results) != 1:
+    #     print("Results file should have only one experiment key")
+    #     print(results.keys())
+    metric = None
     for exp_key, exp_results in results.items():
+        if "xnli" in task_name and "mcq" not in exp_key:
+            # return -1
+            continue
         assert len(exp_results["results"]) == 1, "Results file should have only one task"
         for _, task_results in exp_results["results"].items():
             metric = task_to_metric(task_name)
+    
+    if not metric:
+        return -1
     val = task_results[metric]
     if metric in ["acc", "mc2"] and val <= 1:
         val = val * 100
@@ -150,21 +157,22 @@ def pretty_print_baseline(results, langs, tasks):
 
 
 if __name__ == "__main__":
-    param_set = ["0.01", "0.05", "0.10", "0.15", "0.3"]
+    param_set = ["0.01", "0.05", "0.10", "0.20", "0.3", "0.5"]
     # param_set = ["0.2", "0.4", "0.6", "0.8", "1"]
-    # langs = ["en", "hi", "id", "fr", "es", "de", "ar", "ru"]
-    # langs = ["hi", "ru", "ar", "es", "de", "id", "en", "fr"]
-    langs = ["es", "hi"]
+    # langs = ["en", "hi", "id", "fr", "es", "de", "ar"]
+    langs = ["fr", "de"]
+    # langs = ["en", "hi", ""]
     # tasks = ["xstory_cloze", "xnli", "arc", "hellaswag", "mmlu", "xwinograd", "xcopa", "xnli_mcq", "truthfulqa"]
+    # tasks = ["xnli_mcq", "flores200", "xstory_cloze"]
     tasks = ["xnli_mcq"]
 
     for lang in langs:
         for task in tasks:
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=1.0~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morph-lang={lang},theta_morph_global=<placeholder>~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
-            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
             if task == "flores200":
                 task = f"flores200-{lang}-en"
             else:

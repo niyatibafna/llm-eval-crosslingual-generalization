@@ -95,7 +95,10 @@ def get_character_set(lang):
     script = lang_to_script[lang]
 
     char_set = {
-        "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)),
+        # Include all accents for latin
+        "latin": set(chr(i) for i in range(65, 91)) | set(chr(i) for i in range(97, 123)) | \
+                    set(chr(i) for i in range(192, 256)),
+
         "devanagari": set(chr(i) for i in range(2304, 2432)),
         "arabic": set(chr(i) for i in range(1536, 1792)),
         "cyrillic": set(chr(i) for i in range(1024, 1280)),

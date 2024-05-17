@@ -1,16 +1,16 @@
 #!/bin/bash
 
 #SBATCH --job-name=write_out_dataset    # create a short name for your job
-#SBATCH --nodes=4                # node count
-#SBATCH --ntasks=8               # total number of tasks across all nodes
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=1               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=cpu          # Name of the partition
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-# #SBATCH --gpus=2               # Total number of gpus
+# #SBATCH --gpus=1               # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=00:40:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-7
+#SBATCH --array=0
 #SBATCH --output=logs/write_%a.out   # output file name
 #SBATCH --error=logs/write_%a.out    # error file name
 
@@ -45,17 +45,17 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 # bash scripts/run.sh vi openai-community/gpt2 
 
 num_langs=1
-num_tasks=8
+num_tasks=1
 # langs=("id" "hi" "es" "ar" "ru" "de" "en") # #langs = 7
 langs=("fr") # #langs = 7
 # langs=("hi" "ar") # #langs = 2
 lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
-tasks=(flores200-${lang}-en xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
-truthfulqa_${lang}) # #tasks = 8
+# tasks=(flores200-${lang}-en xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
+# truthfulqa_${lang}) # #tasks = 8
 # tasks=(flores200-${lang}-en truthfulqa_${lang} xnli_${lang}) # #tasks = 3
 # tasks=(flores200-${lang}-en truthfulqa_${lang} xnli_${lang}) # #tasks = 3
 # tasks=(truthfulqa_${lang}) # #tasks = 1
-# tasks=(xnli_${lang}) #tasks = 1
+tasks=(xnli_mcq_${lang}) #tasks = 1
 task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
 
 model="hf-seq2seq"

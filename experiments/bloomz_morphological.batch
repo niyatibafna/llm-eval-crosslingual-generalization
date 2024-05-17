@@ -1,17 +1,17 @@
 #!/bin/bash
 
 #SBATCH --job-name=bloomz_morph    # create a short name for your job
-#SBATCH --nodes=2                # node count
-#SBATCH --ntasks=45              # total number of tasks across all nodes
+#SBATCH --nodes=1                # node count
+#SBATCH --ntasks=30              # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --exclude=e01
 # #SBATCH --nodelist=octopod       # Node is only available in gpu partition
-#SBATCH --gpus-per-node=2                # Total number of gpus
+#SBATCH --gpus-per-node=1                # Total number of gpus
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-44
+#SBATCH --array=0-29
 #SBATCH --output=logs/bloomz_morph_%a.out   # output file name
 #SBATCH --error=logs/bloomz_morph_%a.out    # error file name
 
@@ -46,13 +46,13 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 # bash scripts/run.sh vi openai-community/gpt2 
 
 
-num_langs=3
+num_langs=6
 num_tasks=3
-num_params=5
+num_params=1
 # langs=("en" "id" "hi" "ar" "es" "ru" "de") # #langs = 7
 # langs=("en" "hi" "id" "es" "fr") # #langs = 5
 # langs=("es") # #langs = 2
-langs=("en" "fr" "ar") # #langs = 1
+langs=("en" "id" "hi" "ar" "es" "de") # #langs = 7
 tasks_prod_params=$((num_tasks * num_params))
 lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
 # tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
@@ -61,7 +61,7 @@ lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
 # truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
 # tasks=(truthfulqa_${lang}) # #tasks = 1
 # tasks=("xnli_${lang}") # #tasks = 1
-tasks=(flores200-${lang}-en xstory_cloze_${lang} xnli_${lang}) # #tasks = 3
+tasks=(flores200-${lang}-en xstory_cloze_${lang} xnli_mcq_${lang}) # #tasks = 3
 # tasks=(xnli_mcq_${lang}) # #tasks = 3
 # tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang} \
 # truthfulqa_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 6

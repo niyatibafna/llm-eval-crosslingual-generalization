@@ -1,0 +1,106 @@
+#!/bin/bash
+
+#SBATCH --job-name=bloomz_test    # create a short name for your job
+#SBATCH --nodes=1              # node count
+#SBATCH --ntasks=24             # total number of tasks across all nodes
+#SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --partition=gpu-a100         # Name of the partition
+# #SBATCH --exclude=e01
+# #SBATCH --nodelist=octopod       # Node is only available in gpu partition
+#SBATCH --gpus-per-node=1                # Total number of gpus
+#SBATCH --mem=50G                # Total memory allocated
+#SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
+#SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --array=0-23
+#SBATCH --output=logs/test/cp_bloomz_baselines_TEST.out   # output file name
+#SBATCH --error=logs/test/cp_bloomz_baselines_TEST.out    # error file name
+
+
+echo "### Running $SLURM_JOB_NAME ###"
+
+echo "HOSTNAME: $(hostname)"
+echo
+echo CUDA in ENV:
+env | grep CUDA
+echo
+
+nvidia-smi
+
+module purge
+module load conda
+conda --version
+module load cuda/12.1
+nvcc --version
+
+# Set your conda environment
+source /home/$USER/.bashrc
+conda info --envs
+
+which python
+. "/home/nbafna1/miniconda3/etc/profile.d/conda.sh" && conda deactivate && conda activate llmrob
+which python
+
+set -x # print out every command that's run with a +
+cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluation/"
+## SCRIPT TO RUN
+# bash scripts/run.sh vi openai-community/gpt2 
+
+num_langs=8
+num_tasks=3
+# langs=("id" "hi" "ar" "en" "es" "ru" "de") # #langs = 7
+langs=("fr" "es" "hi" "ar" "en" "ru" "de" "id") # #langs = 8
+# langs=("en" "fr") # #langs = 2
+lang=${langs[$SLURM_ARRAY_TASK_ID / $num_tasks]}
+# tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
+# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
+# tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
+# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
+# tasks=(flores200-${lang}-en) # #tasks = 1
+# tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang})
+# tasks=(xstory_cloze_${lang}) #tasks = 1
+tasks=(xnli_mcq_${lang} xstory_cloze_${lang} flores200-${lang}-en) #tasks = 3
+# tasks=(truthfulqa_${lang})
+
+task=${tasks[$SLURM_ARRAY_TASK_ID % $num_tasks]}
+
+
+model_path="bigscience/bloomz-7b1" 
+model_key="bloomz7b"
+# tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
+# tasks=wmt16-de-en
+# tasks="xnli_${lang}"
+# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang},xnli_${lang}"
+# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang}"
+device=cuda
+# theta=0
+# all_noise_params="character_level-lang=$lang,swap_theta=$theta"
+limit=300
+output_base_path="/export/b08/nbafna1/projects/test/"
+mkdir -p ${output_base_path}
+noised_data_outdir="$output_base_path/noised_data/$model_key/$lang/baselines~limit-$limit/"
+mkdir -p ${noised_data_outdir}
+results_outdir="$output_base_path/results/$model_key/$lang/baselines~limit-$limit/"
+mkdir -p ${results_outdir}
+
+
+python main.py \
+    --tasks=${task} \
+    --model_args pretrained=${model_path} \
+    --device=${device} \
+    --batch_size 24 \
+    --write_out \
+    --model_alias ${model_path}_${lang} \
+    --task_alias ${tasks} \
+    --output_base_path ${noised_data_outdir} \
+    --output_path ${results_outdir}/"${task}".json \
+    --limit $limit \
+    # --all_noise_params_str ${all_noise_params} \
+    
+# XNLI prompt is the one currently on file:
+# prompt = f"Suppose that the following is true:\n{doc['premise']}\n\n Can we infer that: {doc['hypothesis']}?\
+        #     Respond with one of the following words: {self.ENTAILMENT_LABEL}, {self.CONTRADICTION_LABEL}, {self.NEUTRAL_LABEL}."
+        # return prompt
+# XSC: '''Story Continuation and Options'''
+# --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,
+# the filename is automatically generated as task_lang_write_out.json
+# --output_path is the file where the results JSON will be stored for the entire run, with the noise params as a JSON key

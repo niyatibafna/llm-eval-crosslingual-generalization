@@ -68,8 +68,47 @@ def get_lang_name(lang_code):
         "ces": "Czech",
         "fra": "French",
     }
-    return lang_map[lang_code]
+    if lang_code not in lang_map:
+        print(f"WARNING: Language code {lang_code} not found in lang_map")
+    return lang_map.get(lang_code, lang_code)
 
+def related_to_lang(lang):
+    '''
+    Given a language, it returns the high-resource language related to it.
+    '''
+    lang = normalize_lang_codes(lang)
+    # "bho": "bho_Deva",
+    # "awa": "awa_Deva",
+    # "mag": "mag_Deva",
+    # "mai": "mai_Deva",
+    # "hne": "hne_Deva",
+    # "zsm": "zsm_Latn",
+    # "oci": "oci_Latn",
+    # "glg": "glg_Latn",
+    # "dan": "dan_Latn",
+    # "nor": "nor_Latn",
+    # "isl": "isl_Latn",
+    # "swe": "swe_Latn",
+    # "acm": "acm_Arab",
+    # "acq": "acq_Arab",
+    # "aeb": "aeb_Arab",
+    # "ajp": "ajp_Arab",
+    # "apc": "apc_Arab",
+    # "ars": "ars_Arab",
+    # "ary": "ary_Arab",
+    # "arz": "arz_Arab",
+    related_lrls = {
+        "hin": {"bho", "awa", "mag", "mai", "hne"},
+        "ind": {"zsm"},
+        "spa": {"glg"},
+        "fra": {"oci"},
+        "deu": {"dan", "nor", "isl", "swe"},
+        "ara": {"acm", "acq", "aeb", "ajp", "apc", "ars", "ary", "arz"},
+    }
+
+    for hrl in related_lrls:
+        if lang in related_lrls[hrl]:
+            return hrl
 
 def get_character_set(lang):
     '''Get character set for script

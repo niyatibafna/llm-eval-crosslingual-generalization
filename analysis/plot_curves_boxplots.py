@@ -102,7 +102,7 @@ def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
 
 
     plt.tight_layout()  # Adjust subplots to fit into figure area.
-    plt.savefig("results.png")
+    plt.savefig("boxplot_results.png")
 
 
 

@@ -76,14 +76,36 @@ def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
                 ax = axs[j, i]  # Indexing both dimensions
             
             # Lineplots with each language a different color
-            colour_scheme = plt.cm.get_cmap('tab20', len(results.keys()))
+            colour_scheme = plt.get_cmap('tab20', len(results.keys()))
             for lang, lang_results in results.items():
                 x = list(lang_results[noise_type][task].keys())
                 y = list(lang_results[noise_type][task].values())
-                ax.scatter(x, y, label=lang, marker = "x", markersize = 20,  \
+                y = [y_val if y_val != -1 else None for y_val in y ]
+                # markersize = 20
+                if any(y):
+                    ax.scatter(x, y, label=lang, marker = "x", s = 400, linewidths = 8, \
                            color=colour_scheme(list(results.keys()).index(lang)))
 
-            ax.legend(len(results.keys()), title="Languages")
+            # For each noise_param, plot the mean over languages, and a regression line
+            X = []
+            Y = []
+            for noise_param in all_noise_param_ranges[noise_type]:
+                y = [lang_results[noise_type][task][noise_param] for lang, lang_results in results.items()]
+                y = [y_val for y_val in y if y_val != -1]
+                if len(y) == 0:
+                    continue
+                Y.append(np.mean(y))
+                X.append(noise_param)
+
+            # Plot regression line with X and Y
+            m, b = np.polyfit(X, Y, 1)
+            ax.plot(X, [m*x + b for x in X], color = "black", linestyle = "--", linewidth = 3)
+
+            # Plot the mean
+            ax.scatter(X, Y, label = "mean", marker = "o", s = 100, color = "black")
+
+
+            ax.legend()
 
             ax.set_title(task + " " + noise_type)
             ax.set_xlabel("Noise Param")
@@ -99,7 +121,7 @@ def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
 
 
     plt.tight_layout()  # Adjust subplots to fit into figure area.
-    plt.savefig("results.png")
+    plt.savefig("scatter_results.png")
 
 
 

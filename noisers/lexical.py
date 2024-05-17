@@ -17,6 +17,7 @@ from utils.get_functional_words import outpath_paths as ud_wordlists_paths
 from scipy.stats import chisquare
 
 random.seed(42)
+np.random.seed(42)
 
 class LexicalNoiser(Noise):
     '''
@@ -202,6 +203,8 @@ class GlobalLexicalNoiser(Noise):
         
         _, self.character_set = get_character_set(self.lang)
 
+        print(f"Character set: {self.character_set}")
+
         # We'll use a phonological noiser for function words
         self.phon_noiser = GlobalPhonologicalNoiser({"lang": self.lang, "theta_phon": 0.5, "text_file": self.text_file})
 
@@ -223,16 +226,19 @@ class GlobalLexicalNoiser(Noise):
             words = line.strip().split()
             for word in words:
                 # Remove punctuation
-                word = word.strip(".,!?")
+                punctuation_and_bad_chars = "»«.,!?()[]{}\"'`:;'/\\-–—~_<>|@#$%^&*+=\u200b\u200c\u200d\u200e\u200f"
+                word = word.strip(punctuation_and_bad_chars)
                 # If word has numeric characters, skip
                 if any(char.isdigit() for char in word):
                     continue
                 # All characters in word must be in character set
                 if not all(char in self.character_set for char in word):
+                    print(f"Not in character set: {word}")
                     continue
                                 
                 vocab[word.lower()] += 1
         print(f"Finished initializing vocabulary from {text_file}!")
+        print(f"Length of vocab: {len(vocab)}")
 
         return vocab
 
@@ -395,6 +401,7 @@ class GlobalLexicalNoiser(Noise):
                 vocab_map[word] = new_word
             else:
                 vocab_map[word] = word
+        
         return vocab_map
 
     def apply_noise(self, input):
@@ -425,7 +432,6 @@ class GlobalLexicalNoiser(Noise):
 
     def record_noiser_artifacts(self):
         '''Record vocab map, number of words switched out'''
-
         if hasattr(self, "output_dir"):
             with open(f"{self.output_dir}/vocab_map.json", "w") as f:
                 json.dump(self.vocab_map, f, indent=2, ensure_ascii=False) 

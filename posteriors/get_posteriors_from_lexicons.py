@@ -11,12 +11,13 @@ We do this in different ways:
 
 import json
 from typing import List
+from collections import defaultdict
 
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("../")
 from noisers.utils.get_functional_words import OUTDIR, closed_class_tags
-from noisers.utils.get_functional_words import output_paths_local as ud_wordlists_paths
+from noisers.utils.get_functional_words import output_paths as ud_wordlists_paths
 
 from get_lexicons import json_to_list_of_pairs
 
@@ -29,8 +30,8 @@ class Posterior:
             lang (str): language code of hrl
             noise_types (list): list of noise types for which we want posterior
             bil_lexicon (list): list of pairs (hrl, lrl) - may have multiple listings for the same src word
-            src_vocab (set): set of hrl vocabulary
-            tgt_vocab (set): set of lrl vocabulary
+            src_vocab (dict): frequency map of hrl vocabulary
+            tgt_vocab (dict): frequency map of lrl vocabulary
         '''
         self.lang = lang
         self.bil_lexicon = bil_lexicon
@@ -90,6 +91,53 @@ class Posterior:
         noiser, so it's okay. Or at least, it's consistently bad.
         '''
         pass
+
+    def get_suffix_frequency(self, vocab):
+        '''Get suffix frequency map from vocab
+        Args:
+            vocab: dict, vocabulary of type {word: count}
+        Returns:
+            suffix_freq: dict, contains the frequency of each suffix
+            most_frequent_word_per_suffix: dict, contains the most frequent word for each suffix. This is 
+                used to condition the new suffix on the stem of the word if the suffix is swapped
+        '''
+        suffix_freq = defaultdict(lambda: 0)
+        for word in vocab:
+            for i in range(1, round(len(word)/2) + 1): #only allow half the word to be a suffix
+                suffix_freq[word[-i:]] += vocab[word]
+
+        return suffix_freq
+
+    
+    def filter_suffix_topk(self, suffix_freq, k = 200):
+        '''
+        Filter top k suffixes from suffix_freq
+        '''
+        suffix_freq = {suffix: freq for suffix, freq in suffix_freq.items() if len(suffix) > 1}
+        sorted_suffixes = sorted(suffix_freq, key=lambda x: suffix_freq[x], reverse=True)
+        suffix_freq = {suffix: suffix_freq[suffix] for suffix in sorted_suffixes[:k]}
+        suffix_freq = defaultdict(lambda: 0, suffix_freq)
+
+        return suffix_freq
+
+    def same_stem(self, src, tgt):
+        '''
+        Check if src and tgt have the same stem. We do this by checking if the
+            src and tgt have some non-trivial shared prefix (let's say length 2 or 33% of the length of the
+            word)
+        '''
+        if self.lang == "hin":
+            return src[0] == tgt[0]
+
+        # longest common prefix
+        lcp = 0
+        for i in range(min(len(src), len(tgt))):
+            if src[i] == tgt[i]:
+                lcp += 1
+            else:
+                break
+        if lcp >= 2 and lcp >= 0.33 * len(src):
+            return True
     
     def post_morphological_noiser(self):
         '''
@@ -110,20 +158,66 @@ class Posterior:
             to get theta_morph.
         '''
 
-        pass
+        # Collect all suffixes
+        src_suffix_freq = self.get_suffix_frequency(self.src_vocab)
+
+        # Filter top k suffixes
+        src_suffix_freq = self.filter_suffix_topk(src_suffix_freq)
+
+        print(f"Resulting suffix freq: ")
+        print(*src_suffix_freq.items(), sep="\n")
+
+        # Find the proportion of times the suffix was changed
+        suffix_changes = defaultdict(lambda: 0)
+        suffix_counts = defaultdict(lambda: 0)
+        for (src, tgt) in self.bil_lexicon:
+            for i in range(1, round(len(src)/2) + 1): # When we do this, we are basically saying that the word
+                # exhibits *all* suffixes that it has. 
+                # This is probably unlikely, but it's okay because we're checking whether the suffix belongs
+                # in our collected list, which hopefully only has linguistic suffixes
+                src_suffix = src[-i:]
+                if src_suffix in src_suffix_freq:
+                    print(f"Source: {src}, Target: {tgt}, Suffix: {src_suffix}")
+                    # Now we'll check whether source and target have the same stem
+                    if not self.same_stem(src, tgt):
+                        print(f"Source and target don't have the same stem")
+                        continue
+                    suffix_counts[src_suffix] += 1
+                    if tgt[-i:] != src[-i:]:
+                        print(f"Suffix changed")
+                        suffix_changes[src_suffix] += 1
+
+
+        # Find the proportion of times the suffix was changed
+        theta_morph = 0
+        for suffix in src_suffix_freq:
+            if suffix_counts[suffix] == 0:
+                continue
+            theta_morph += suffix_changes[suffix]/suffix_counts[suffix]
+        
+        observed_suffixes = len([suffix for suffix in src_suffix_freq if suffix_counts[suffix] > 0])
+        print(f"Observed suffixes: {observed_suffixes}")
+        print(f"Total suffixes: {len(src_suffix_freq)}")
+        theta_morph /= observed_suffixes
+
+        return theta_morph
+        
 
 hin_langs = ["bho", "mag", "mai", "hne", "awa"]
 
 for lang in hin_langs:
-    bil_lexicon_json_file = f"/Users/work/Desktop/projects/llm-robustness-to-xlingual-noise/posteriors/lexicons/hin-{lang}.json"
+    bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/lexicons/hin-{lang}.json"
     bil_lexicon = json_to_list_of_pairs(bil_lexicon_json_file)
-    src_vocab = set()
-    tgt_vocab = set()
+    src_vocab = defaultdict(lambda: 0)
+    tgt_vocab = defaultdict(lambda: 0)
     for (src, tgt) in bil_lexicon:
-        src_vocab.add(src)
-        tgt_vocab.add(tgt)
+        src_vocab[src] += 1
+        tgt_vocab[tgt] += 1
 
     post = Posterior("hin", bil_lexicon, src_vocab, tgt_vocab)
     print(f"LANGUAGE: {lang}")
+    print("Lexical noiser:")
     print(post.post_lexical_noiser())
+    print("Morphological noiser:")
+    print(post.post_morphological_noiser())
     print("\n\n\n")

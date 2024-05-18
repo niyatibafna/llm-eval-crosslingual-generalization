@@ -21,7 +21,7 @@ files = {
 }
 
 OUTDIR = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/utils/ud_closed_class_wordlists"
-outpath_paths ={
+output_paths ={
     "hin": f"{OUTDIR}/hi_hdtb-ud-train.json",
     "deu": f"{OUTDIR}/de_hdt-ud-train.json",
     "ara": f"{OUTDIR}/ar_padt-ud-train.json",
@@ -59,5 +59,5 @@ if __name__ == "__main__":
             if tag in closed_class_tags:
                 tag2wordlist[tag].append(word)
         
-        with open(outpath_paths[lang], "w", encoding="utf-8") as out:
+        with open(output_paths[lang], "w", encoding="utf-8") as out:
             json.dump(tag2wordlist, out, indent=2, ensure_ascii=False)

@@ -259,14 +259,14 @@ class GlobalMorphologicalNoiser(Noise):
         self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
         self.suffix_freq = defaultdict(lambda: 0, self.suffix_freq)
 
-    def filter_suffix_topk(self):
+    def filter_suffix_topk(self, k):
         '''
         Filter
-        Take only top 200 suffixes
+        Take only top k suffixes
         '''
         self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
         sorted_suffixes = sorted(self.suffix_freq, key=lambda x: self.suffix_freq[x], reverse=True)
-        self.suffix_freq = {suffix: self.suffix_freq[suffix] for suffix in sorted_suffixes[:200]}
+        self.suffix_freq = {suffix: self.suffix_freq[suffix] for suffix in sorted_suffixes[:k]}
         self.suffix_freq = defaultdict(lambda: 0, self.suffix_freq)
 
 

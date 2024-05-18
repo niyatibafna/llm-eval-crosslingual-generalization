@@ -19,3 +19,5 @@ noisers/noiser_artifacts/*
 noisers/test_noised_outputs/*
 analysis/curves/*
 analysis/scatter_results.png
+posteriors/flores_lexicons/*
+posteriors/temp.txt

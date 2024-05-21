@@ -22,3 +22,4 @@ analysis/scatter_results.png
 posteriors/flores_lexicons/*
 posteriors/temp.txt
 posteriors/flores_lexicons_raw/*
+posteriors/lexicons_raw/*

@@ -12,7 +12,7 @@ from utils.misc import normalize_lang_codes, get_character_set
 sys.path.append(os.getcwd())
 
 from utils.get_functional_words import OUTDIR, closed_class_tags
-from utils.get_functional_words import outpath_paths as ud_wordlists_paths
+from utils.get_functional_words import output_paths as ud_wordlists_paths
 
 from scipy.stats import chisquare
 

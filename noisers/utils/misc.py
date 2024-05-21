@@ -13,7 +13,7 @@ def normalize_lang_codes(lang):
         "en": "eng",
         "de": "deu",
         "hi": "hin",
-        "ar": "ara",
+        "ar": "arb",
         "ru": "rus",
         "es": "spa",
         "fr": "fra",
@@ -103,7 +103,7 @@ def related_to_lang(lang):
         "spa": {"glg"},
         "fra": {"oci"},
         "deu": {"dan", "nor", "isl", "swe"},
-        "ara": {"acm", "acq", "aeb", "ajp", "apc", "ars", "ary", "arz"},
+        "arb": {"acm", "acq", "aeb", "ajp", "apc", "ars", "ary", "arz"},
     }
 
     for hrl in related_lrls:

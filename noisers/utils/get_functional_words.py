@@ -11,7 +11,7 @@ import json
 files = {
     "deu":"/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_German-HDT/de_hdt-ud-train.conllu",
     "hin": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu",
-    "ara": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Arabic-PADT/ar_padt-ud-train.conllu",
+    "arb": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Arabic-PADT/ar_padt-ud-train.conllu",
     "ind": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Indonesian-GSD/id_gsd-ud-train.conllu",
     "eng": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_English-EWT/en_ewt-ud-train.conllu",
     "rus": "/export/b08/nbafna1/data/ud-treebanks-v2.13/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu",
@@ -24,7 +24,7 @@ OUTDIR = "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/
 output_paths ={
     "hin": f"{OUTDIR}/hi_hdtb-ud-train.json",
     "deu": f"{OUTDIR}/de_hdt-ud-train.json",
-    "ara": f"{OUTDIR}/ar_padt-ud-train.json",
+    "arb": f"{OUTDIR}/ar_padt-ud-train.json",
     "ind": f"{OUTDIR}/id_gsd-ud-train.json",
     "eng": f"{OUTDIR}/en_ewt-ud-train.json",
     "rus": f"{OUTDIR}/ru_syntagrus-ud-train.json",

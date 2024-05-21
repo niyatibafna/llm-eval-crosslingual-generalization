@@ -13,7 +13,7 @@ from utils.misc import normalize_lang_codes, get_character_set
 sys.path.append(os.getcwd())
 
 from utils.get_functional_words import OUTDIR, closed_class_tags
-from utils.get_functional_words import outpath_paths as ud_wordlists_paths
+from utils.get_functional_words import output_paths as ud_wordlists_paths
 
 from scipy.stats import chisquare
 
@@ -227,6 +227,8 @@ class GlobalMorphologicalNoiser(Noise):
     def is_word_functional(self, word):
         '''Check if word is functional'''
         for tag in self.tag2wordlist:
+            if tag == "AUX".casefold(): # AUX words *can* be affected by morphological change
+                continue
             if word in self.tag2wordlist[tag]:
                 return True
         return False
@@ -259,11 +261,17 @@ class GlobalMorphologicalNoiser(Noise):
         self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
         self.suffix_freq = defaultdict(lambda: 0, self.suffix_freq)
 
-    def filter_suffix_topk(self, k):
+    def filter_suffix_topk(self, k=200):
         '''
         Filter
         Take only top k suffixes
         '''
+        lang2k = {"hin": 100, "deu": 120, "fra": 200, "spa": 200}
+        if self.lang in lang2k:
+            k = lang2k[self.lang]
+        else:
+            k = 200
+
         self.suffix_freq = {suffix: freq for suffix, freq in self.suffix_freq.items() if len(suffix) > 1}
         sorted_suffixes = sorted(self.suffix_freq, key=lambda x: self.suffix_freq[x], reverse=True)
         self.suffix_freq = {suffix: self.suffix_freq[suffix] for suffix in sorted_suffixes[:k]}
@@ -386,11 +394,12 @@ class GlobalMorphologicalNoiser(Noise):
         vocab_map = dict()
         for word in self.vocab:
 
-            # We choose to also noise functional words because many languages have functional words that are
-            # morphologically complex. We want to capture this complexity in the noised text.
-            # if self.is_word_functional(word):
-            #     vocab_map[word] = word
-            #     continue
+            # We will not noise functional words: EXCEPT auxiliaries
+            # This is the compromise we make, because many languages have morphologically complex 
+            # auxiliaries.
+            if self.is_word_functional(word):
+                vocab_map[word] = word
+                continue
 
             # Get all suffixes of the word
             suffixes = [word[-i:] for i in range(1, len(word))]
@@ -399,15 +408,20 @@ class GlobalMorphologicalNoiser(Noise):
             if len(suffixes) == 0:
                 vocab_map[word] = word
                 continue
-
-            # Get weights based on log frequency
-            # weights = np.log(np.array([self.suffix_freq[suffix] for suffix in suffixes]) + 1)
-            # Get weights based on log frequency
-            weights = np.array([self.suffix_freq[suffix] for suffix in suffixes])
-            weights = weights / sum(weights)
-            # Sample a suffix
-            sampled_suffix = rng.choice(suffixes, 1, p=weights)[0]
+            
+            ### We could sample a suffix based on frequency BUT this would mean we always
+            ### pick the shortest.
+            # # Get weights based on log frequency
+            # # weights = np.log(np.array([self.suffix_freq[suffix] for suffix in suffixes]) + 1)
+            # # Get weights based on log frequency
+            # weights = np.array([self.suffix_freq[suffix] for suffix in suffixes])
+            # weights = weights / sum(weights)
+            # # Sample a suffix
+            # sampled_suffix = rng.choice(suffixes, 1, p=weights)[0]
             # Swap out the suffix
+
+            # Instead, let's just pick the longest suffix:
+            sampled_suffix = max(suffixes, key=lambda x: len(x))
             new_word = word[:-len(sampled_suffix)] + self.suffix_map[sampled_suffix]
             vocab_map[word] = new_word
         

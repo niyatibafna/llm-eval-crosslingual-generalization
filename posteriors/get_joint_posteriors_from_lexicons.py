@@ -1,4 +1,10 @@
 '''
+The name of this file is a misnomer. We are not looking for joint posteriors. We are just 
+looking for posteriors *taking into account* other random processes that have happened. 
+It is really more of a *sequential* posterior than a joint posterior. 
+
+Recall:
+
 Given a bilingual lexicon between two languages, and possible monolingual data,
 this script computes the posteriors of the parameters of all noisers.
 
@@ -7,8 +13,11 @@ We do this in different ways:
 2. Try to separate out changes in languages into three types, and find posterior
     for each noiser, taking into account the other noisers.
 
+We do the second of these. First we compute phonological change, then morphological change,
+and finally lexical change. Lexical change is only counted for words that are not affected
+by the other types of change.
 '''
-debug = False
+debug = True
 
 import json
 from typing import List
@@ -68,10 +77,15 @@ class Posterior:
             if src != tgt and tgt not in self.src_vocab: # Try without this check
                 if self.is_word_functional(src):
                     count_func += 1
-                    # print(f"Functional word: {src} -> {tgt}")
+                    if debug:
+                        print(f"Functional word: {src} -> {tgt}")
                 else:
-                    count_content += 1
-                    # print(f"Content word: {src} -> {tgt}")
+                    # We also want to check that the words don't have the same stem (because that 
+                    # would be a morphological change, not a lexical change)
+                    if not self.same_stem(src, tgt):
+                        count_content += 1
+                        if debug:
+                            print(f"Content word: {src} -> {tgt}")
             if self.is_word_functional(src):
                 total_func += 1
             else:
@@ -127,6 +141,9 @@ class Posterior:
             src and tgt have some non-trivial shared prefix (let's say length 2 or 33% of the length of the
             word)
         '''
+        punctuation = ".,;:?!-_()[]{}\"'`~@#$%^&*+=|\\<>/"
+        src = src.lower().strip(punctuation)
+        tgt = tgt.lower().strip(punctuation)
         if self.lang == "hin":
             return src[0] == tgt[0]
 
@@ -198,6 +215,11 @@ class Posterior:
             if suffix_counts[suffix] == 0:
                 continue
             theta_morph += suffix_changes[suffix]/suffix_counts[suffix]
+
+        if debug:
+            print(f"Suffix changes: {suffix_changes}")
+            print(f"Suffix counts: {suffix_counts}")
+            print(f"Theta morph: {theta_morph}")
         
         observed_suffixes = len([suffix for suffix in src_suffix_freq if suffix_counts[suffix] > 0])
         if debug:
@@ -225,9 +247,9 @@ related_lrls = {
 
 for src_lang in related_lrls:
     for tgt_lang in sorted(list(related_lrls[src_lang])):
-        if src_lang != "hin":
+        if src_lang != "fra":
             continue
-        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons/{src_lang}-{tgt_lang}.json"
+        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons/{src_lang}_{tgt_lang}.json"
         bil_lexicon = json_to_list_of_pairs(bil_lexicon_json_file)
         src_vocab = defaultdict(lambda: 0)
         tgt_vocab = defaultdict(lambda: 0)
@@ -237,14 +259,14 @@ for src_lang in related_lrls:
 
         post = Posterior(src_lang, bil_lexicon, src_vocab, tgt_vocab)
         # print(f"LANGUAGES: {src_lang} -> {tgt_lang}")
-        # print("Lexical noiser:")
+        print("Lexical noiser: (content, functional)")
         theta_c, theta_f =  post.post_lexical_noiser()
-        # print(round(theta_c, 2))
-        # print(round(theta_f, 2))
-        # print("Morphological noiser:")
+        print(round(theta_c, 2))
+        print(round(theta_f, 2))
+        print("Morphological noiser:")
         theta_morph = post.post_morphological_noiser()
         print(round(theta_morph, 2))
-        # print("\n\n\n")
+        print("\n\n\n")
         # print(tgt_lang)
 
 # # Print all related langs in vertical line

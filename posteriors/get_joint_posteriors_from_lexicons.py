@@ -247,7 +247,7 @@ related_lrls = {
 
 for src_lang in related_lrls:
     for tgt_lang in sorted(list(related_lrls[src_lang])):
-        if src_lang != "fra":
+        if src_lang != "hin" or tgt_lang != "mai":
             continue
         bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons/{src_lang}_{tgt_lang}.json"
         bil_lexicon = json_to_list_of_pairs(bil_lexicon_json_file)

@@ -157,11 +157,12 @@ def pretty_print_baseline(results, langs, tasks):
 
 
 if __name__ == "__main__":
-    # param_set = ["0.01", "0.05", "0.10", "0.20", "0.3", "0.5"]
     param_set = ["0", "0.05", "0.1", "0.2", "0.3", "0.5", "0.8"]
+    # param_set = ["0","0.01", "0.05", "0.10", "0.20", "0.3", "0.5", "0.8"]
+    # param_set = ["0", "0.1", "0.2", "0.3", "0.5", "0.8", "1"]
     # param_set = ["0.2", "0.4", "0.6", "0.8", "1"]
-    # langs = ["en", "hi", "id", "fr", "es", "de", "ar"]
-    langs = ["hi"]
+    langs = ["en", "hi", "id", "fr", "es", "de", "ar"]
+    # langs = ["ar"]
 #     langs = [
 #     "awa",
 #     "mai",
@@ -184,18 +185,18 @@ if __name__ == "__main__":
 #     "aeb"
 # ]
 
-    # langs = ["en", "hi", ""]
+    # langs = ["de", "fr"]
     # tasks = ["xstory_cloze", "xnli", "arc", "hellaswag", "mmlu", "xwinograd", "xcopa", "xnli_mcq", "truthfulqa"]
-    # tasks = ["xnli_mcq", "flores200", "xstory_cloze"]
-    tasks = ["flores200"]
+    tasks = ["xnli_mcq", "flores200", "xstory_cloze"]
+    # tasks = ["xnli_mcq"]
 
     for lang in langs:
         for task in tasks:
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morph-lang={lang},theta_morph_global=<placeholder>~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
-            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.5~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morphls-lang={lang},theta_morph_global=<placeholder>~limit-300"
+            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0~limit-300"
+            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=0,theta_func_global=<placeholder>~limit-300"
             # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
             if task == "flores200":
                 task = f"flores200-{lang}-en"

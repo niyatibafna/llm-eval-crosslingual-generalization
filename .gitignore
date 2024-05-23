@@ -23,3 +23,4 @@ posteriors/flores_lexicons/*
 posteriors/temp.txt
 posteriors/flores_lexicons_raw/*
 posteriors/lexicons_raw/*
+noiser_artifacts_archive/*

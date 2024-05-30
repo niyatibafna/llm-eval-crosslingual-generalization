@@ -1,3 +1,5 @@
+import pandas as pd
+
 def parse_excel_table_into_results(lang_results, all_noise_param_ranges, tasks = ['X->eng', 'XNLI', 'XStoryCloze']):
     results_lang_all_noisers = {}
     for noise_type, str_results in lang_results.items():
@@ -55,7 +57,6 @@ def normalize_and_transform_scores(results, baselines, tasks = ['X->eng', 'XNLI'
     return transformed_results
 
 
-
 # Now we can plot the results
 ## 1 plot per task per noiser
 ## X axis: noise_param
@@ -66,7 +67,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
+def plot_results(results, tasks, curr_noisers, \
+        all_noise_param_ranges, noise_type_real_points = None):
 
     plt.rcParams.update({'font.size': 22})
     num_tasks = len(tasks)
@@ -128,244 +130,23 @@ def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
             ax.set_xlim(-0.1, 1.1)
 
 
+            # Now we plot the real language results
+            if noise_type_real_points is not None and task in noise_type_real_points:
+                # here, task and noise_type are fixed by the above two loops
+                for lang, x, y in noise_type_real_points[task][noise_type]:
+                    if x == 0 and y == 0:
+                        continue
+                    # The point should be annotated with the name of the language
+                    ax.annotate(lang, (x, y), textcoords="offset points", xytext=(0,10), ha='center')
+                    # Choose a different colour for the real language points
+                    ax.scatter(x, y, color = "purple", s = 400, marker = "*")
+
+                    
+
 
     plt.tight_layout()  # Adjust subplots to fit into figure area.
-    plt.savefig("plots/lineplots.png")
+    plt.savefig("plots/lineplots_reallangs.png")
 
-
-# Archive:
-## This has the old morph results: without language specific thresholds, and not noising aux 
-## XNLI noises the label words for all EXCEPT lexical_f0.5 (which has new XNLI results)
-# es = { \
-# 'lexical_f0.5': \
-# '''32.59	43.67	66.67
-# 30.52	43	69.33
-# 27.13	42.67	67
-# 22.7	39.67	63.33
-# 19.97	39	64
-# 9.21	35.67	60.33
-# 1.95	33.67	55''',
-# 'lexical': \
-# '''42.91	49.67	72.33
-# 26.57	43	68.33
-# 26.52	41.67	63
-# 28.1	41.33	66.33
-# 15.01	41.67	65
-# 13.56	38.67	62
-# 5.72	37.33	57.33''',
-# 'phonological': \
-# '''42.91	49.67	72.33
-# 41.92	49	67
-# 34.74	46.67	70
-# 30.34	37.33	66
-# 16.02	35	63.33
-# 10.64	35.67	59.67''',
-# 'morphological': \
-# '''42.91	49.67	72.33
-# 40.78	48	70.33
-# 34.5	44	68.67
-# 33.62	40	70.67
-# 32.04	40.33	66.33
-# 30	35.33	65.67'''
-# }
-
-# hi = {
-# 'lexical_f0.5': \
-# '''44.86	48.67	61.67
-# 33.92	47.67	61
-# 30.15	38	52.33
-# 19.71	37.67	60.67
-# 21.79	43.67	56.33
-# 11.03	42	56.33
-# 2.23	36	51''',
-# 'lexical': \
-# '''56.44	51	63.67
-# 27.05	42.33	56.33
-# 27.83	36	58
-# 22.53	39	55.67
-# 19.11	37.33	52
-# 13.64	40	55
-# 5.8	-1	-1''',
-# 'phonological': \
-# '''56.44	51	63.67
-# 56.13	44	59.67
-# 45.99	47.67	59.67
-# 36.29	45	58
-# 16.81	35	54
-# 7.46	38.33	48''',
-# 'morphological': \
-# '''56.44	51	63.67
-# 53.64	50.33	62
-# 46.82	47.33	60.67
-# 44.77	50	60.33
-# 42.21	46.33	59.33
-# 38.39	47.33	55.33'''
-# }
-
-# id = {
-# 'lexical_f0.5': \
-# '''49.97	-1	67.67
-# 43.61	-1	66.33
-# 33.59	-1	67
-# 30.94	-1	57.33
-# 24.1	-1	57.67
-# 11.99	-1	58.67
-# 4.82	-1	47''',
-# 'lexical': \
-# '''60	-1	69.33
-# 34.98	-1	61.67
-# 32.04	-1	61
-# 34.81	-1	54.67
-# 22.37	-1	58.67
-# 15.91	-1	55.33
-# 8.73	-1	-1''',
-# 'phonological': \
-# '''60	-1	69.33
-# 58.39	-1	68.67
-# 48.58	-1	63.67
-# 37.99	-1	65
-# 8.81	-1	59.33
-# 3.98	-1	54.67''',
-# 'morphological': \
-# '''60	-1	69.33
-# 49.04	-1	64
-# 50.17	-1	58.33
-# 42.76	-1	61
-# 26.51	-1	56
-# 21.81	-1	58.67'''
-# }
-
-# ar = {
-# 'lexical_f0.5': \
-# '''-1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1''',
-# 'lexical': \
-# '''55.32	46	66
-# 39.9	35	64.33
-# 37.9	35.33	63.33
-# 37.25	39.33	62.67
-# 20.2	36.33	58.67
-# 16.92	40.33	56.33
-# 8.18	-1	-1''',
-# 'phonological': \
-# '''55.32	46	66
-# 53.48	46.67	66
-# 41.01	43.33	60
-# 25.91	43.33	58.67
-# 6.66	33.33	53
-# 3.24	33.67	53.67''',
-# 'morphological': \
-# '''55.32	46	66
-# 49.77	45.33	60.67
-# 44.06	45	55.67
-# 37.36	41.33	57
-# 31.33	39	54.67
-# 23.96	40.67	52'''
-# }
-
-# en = {
-# 'lexical_f0.5': \
-# '''63.88	52	74
-# 70.86	49.67	73.67
-# 64.82	48.67	69.33
-# 58.78	44.33	60.33
-# 45.01	46	64.67
-# 23.85	43	56.33
-# 14.67	38	53.33''',
-# 'lexical': \
-# '''99.53	60.33	77.33
-# 65.29	34.67	72
-# 44.22	34.33	70.67
-# 35.78	49	69
-# 34.36	34.33	63.67
-# 34.79	34.33	62
-# 17.23	-1	-1''',
-# 'phonological': \
-# '''99.53	60.33	77.33
-# 96.22	58.33	75.33
-# 76.92	54.33	69.67
-# 60.93	34.33	63.33
-# 40.32	34.67	63.33
-# 22.74	40.67	60''',
-# 'morphological': \
-# '''99.53	60.33	77.33
-# 87.66	34	72.33
-# 84.9	57	68
-# 69.66	52	66.67
-# 56.96	34.33	61.67
-# 51.1	33.67	59.67'''
-# }
-
-# de = {
-# 'lexical_f0.5': \
-# '''24.64	42.67	-1
-# 22.31	43	-1
-# 17.93	42.33	-1
-# 11.73	38.67	-1
-# 10.43	39	-1
-# 5.2	37	-1
-# 2.03	35.67	-1''',
-# 'lexical': \
-# '''-1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1''',
-# 'phonological': \
-# '''-1	47.33	-1
-# -1	46	-1
-# -1	45	-1
-# -1	42.33	-1
-# -1	33.33	-1
-# -1	34.67	-1''',
-# 'morphological': \
-# '''-1	47.33	-1
-# -1	47.33	-1
-# -1	45.67	-1
-# -1	34	-1
-# -1	44.67	-1
-# -1	43.33	-1'''
-# }
-
-# fr = {
-# 'lexical_f0.5': \
-# '''48.08	47	-1
-# 40.8	46	-1
-# 40.21	46.67	-1
-# 36.52	41.67	-1
-# 28.45	41.67	-1
-# 20.29	41	-1
-# 3.88	38	-1''',
-# 'lexical_f0.8': \
-# '''57.34	-1	-1
-# 40.48	-1	-1
-# 37.25	-1	-1
-# 34.87	-1	-1
-# 36.67	-1	-1
-# 26.08	-1	-1
-# 12.45	-1	-1''',
-# 'phonological': \
-# '''57.34	-1	-1
-# 55.08	-1	-1
-# 50.76	-1	-1
-# 47.95	-1	-1
-# 37.53	-1	-1
-# 19.45	-1	-1''',
-# 'morphological': \
-# '''57.34	-1	-1
-# 53.9	-1	-1
-# 52.65	-1	-1
-# 48.81	-1	-1
-# 44.92	-1	-1
-# 45.27	-1	-1'''
-# }
 
 es = { \
 'lexical_c0': \
@@ -763,4 +544,314 @@ for lang, lang_results in results.items():
     
     print("\n\n\n")
 
-plot_results(results, tasks, curr_noisers, all_noise_param_ranges)
+### Points on plots obtained from noise parameter posteriors on real language eval data
+posteriors_str = '''0	0	0
+0.15	0.67	0.26
+0.24	0.79	0.32
+0.19	0.67	0.24
+0.14	0.7	0.26
+0.2	0.81	0.34
+0	0	0
+0.19	0.46	0.13
+0	0	0
+0.34	0.78	0.31
+0	0	0
+0.57	0.88	0.73
+0	0	0
+0.73	0.98	0.74
+0.88	0.99	0.71
+0.75	0.99	0.79'''
+
+degradations = '''0
+34.39
+42.63
+41.11
+26.52
+49.68
+0
+11.65
+0
+-9.55
+0
+33.03
+0.00
+60.32
+90.04
+59.52'''
+
+langs_real_points = '''hin
+awa
+bho
+hne
+mag
+mai
+ind
+zsm
+spa
+glg
+fra
+oci
+deu
+dan
+isl
+swe'''
+
+posteriors = [(float(x), float(y), float(z)) \
+              for x, y, z in [line.split() for line in posteriors_str.split("\n")]]
+# post_df = pd.DataFrame(posteriors, columns = ["theta_content", "theta_functional", "theta_morph"])
+degradations = [float(x) for x in degradations.split("\n")]
+
+langs_real_points = [lang for lang in langs_real_points.split("\n")]
+
+noise_type_real_points_xeng = {noise_type: list() for noise_type in curr_noisers}
+for lang, post, deg in zip(langs_real_points, posteriors, degradations):
+    theta_c, theta_f, theta_m = post
+    if theta_f >= 0.7:
+        noise_type_real_points_xeng["lexical_f0.8"].append((lang, theta_c, deg))
+    elif theta_f >= 0.3:
+        noise_type_real_points_xeng["lexical_f0.5"].append((lang, theta_c, deg))
+    else:
+        noise_type_real_points_xeng["lexical_f0"].append((lang, theta_c, deg))
+    
+    noise_type_real_points_xeng["lexical_c0"].append((lang, theta_f, deg))
+    noise_type_real_points_xeng["morphological"].append((lang, theta_m, deg))
+
+noise_type_real_points = dict()
+noise_type_real_points["X->eng"] = noise_type_real_points_xeng
+
+plot_results(results, tasks, curr_noisers, all_noise_param_ranges, noise_type_real_points = noise_type_real_points)
+
+
+# Archive:
+## This has the old morph results: without language specific thresholds, and not noising aux 
+## XNLI noises the label words for all EXCEPT lexical_f0.5 (which has new XNLI results)
+# es = { \
+# 'lexical_f0.5': \
+# '''32.59	43.67	66.67
+# 30.52	43	69.33
+# 27.13	42.67	67
+# 22.7	39.67	63.33
+# 19.97	39	64
+# 9.21	35.67	60.33
+# 1.95	33.67	55''',
+# 'lexical': \
+# '''42.91	49.67	72.33
+# 26.57	43	68.33
+# 26.52	41.67	63
+# 28.1	41.33	66.33
+# 15.01	41.67	65
+# 13.56	38.67	62
+# 5.72	37.33	57.33''',
+# 'phonological': \
+# '''42.91	49.67	72.33
+# 41.92	49	67
+# 34.74	46.67	70
+# 30.34	37.33	66
+# 16.02	35	63.33
+# 10.64	35.67	59.67''',
+# 'morphological': \
+# '''42.91	49.67	72.33
+# 40.78	48	70.33
+# 34.5	44	68.67
+# 33.62	40	70.67
+# 32.04	40.33	66.33
+# 30	35.33	65.67'''
+# }
+
+# hi = {
+# 'lexical_f0.5': \
+# '''44.86	48.67	61.67
+# 33.92	47.67	61
+# 30.15	38	52.33
+# 19.71	37.67	60.67
+# 21.79	43.67	56.33
+# 11.03	42	56.33
+# 2.23	36	51''',
+# 'lexical': \
+# '''56.44	51	63.67
+# 27.05	42.33	56.33
+# 27.83	36	58
+# 22.53	39	55.67
+# 19.11	37.33	52
+# 13.64	40	55
+# 5.8	-1	-1''',
+# 'phonological': \
+# '''56.44	51	63.67
+# 56.13	44	59.67
+# 45.99	47.67	59.67
+# 36.29	45	58
+# 16.81	35	54
+# 7.46	38.33	48''',
+# 'morphological': \
+# '''56.44	51	63.67
+# 53.64	50.33	62
+# 46.82	47.33	60.67
+# 44.77	50	60.33
+# 42.21	46.33	59.33
+# 38.39	47.33	55.33'''
+# }
+
+# id = {
+# 'lexical_f0.5': \
+# '''49.97	-1	67.67
+# 43.61	-1	66.33
+# 33.59	-1	67
+# 30.94	-1	57.33
+# 24.1	-1	57.67
+# 11.99	-1	58.67
+# 4.82	-1	47''',
+# 'lexical': \
+# '''60	-1	69.33
+# 34.98	-1	61.67
+# 32.04	-1	61
+# 34.81	-1	54.67
+# 22.37	-1	58.67
+# 15.91	-1	55.33
+# 8.73	-1	-1''',
+# 'phonological': \
+# '''60	-1	69.33
+# 58.39	-1	68.67
+# 48.58	-1	63.67
+# 37.99	-1	65
+# 8.81	-1	59.33
+# 3.98	-1	54.67''',
+# 'morphological': \
+# '''60	-1	69.33
+# 49.04	-1	64
+# 50.17	-1	58.33
+# 42.76	-1	61
+# 26.51	-1	56
+# 21.81	-1	58.67'''
+# }
+
+# ar = {
+# 'lexical_f0.5': \
+# '''-1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1''',
+# 'lexical': \
+# '''55.32	46	66
+# 39.9	35	64.33
+# 37.9	35.33	63.33
+# 37.25	39.33	62.67
+# 20.2	36.33	58.67
+# 16.92	40.33	56.33
+# 8.18	-1	-1''',
+# 'phonological': \
+# '''55.32	46	66
+# 53.48	46.67	66
+# 41.01	43.33	60
+# 25.91	43.33	58.67
+# 6.66	33.33	53
+# 3.24	33.67	53.67''',
+# 'morphological': \
+# '''55.32	46	66
+# 49.77	45.33	60.67
+# 44.06	45	55.67
+# 37.36	41.33	57
+# 31.33	39	54.67
+# 23.96	40.67	52'''
+# }
+
+# en = {
+# 'lexical_f0.5': \
+# '''63.88	52	74
+# 70.86	49.67	73.67
+# 64.82	48.67	69.33
+# 58.78	44.33	60.33
+# 45.01	46	64.67
+# 23.85	43	56.33
+# 14.67	38	53.33''',
+# 'lexical': \
+# '''99.53	60.33	77.33
+# 65.29	34.67	72
+# 44.22	34.33	70.67
+# 35.78	49	69
+# 34.36	34.33	63.67
+# 34.79	34.33	62
+# 17.23	-1	-1''',
+# 'phonological': \
+# '''99.53	60.33	77.33
+# 96.22	58.33	75.33
+# 76.92	54.33	69.67
+# 60.93	34.33	63.33
+# 40.32	34.67	63.33
+# 22.74	40.67	60''',
+# 'morphological': \
+# '''99.53	60.33	77.33
+# 87.66	34	72.33
+# 84.9	57	68
+# 69.66	52	66.67
+# 56.96	34.33	61.67
+# 51.1	33.67	59.67'''
+# }
+
+# de = {
+# 'lexical_f0.5': \
+# '''24.64	42.67	-1
+# 22.31	43	-1
+# 17.93	42.33	-1
+# 11.73	38.67	-1
+# 10.43	39	-1
+# 5.2	37	-1
+# 2.03	35.67	-1''',
+# 'lexical': \
+# '''-1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1
+# -1	-1	-1''',
+# 'phonological': \
+# '''-1	47.33	-1
+# -1	46	-1
+# -1	45	-1
+# -1	42.33	-1
+# -1	33.33	-1
+# -1	34.67	-1''',
+# 'morphological': \
+# '''-1	47.33	-1
+# -1	47.33	-1
+# -1	45.67	-1
+# -1	34	-1
+# -1	44.67	-1
+# -1	43.33	-1'''
+# }
+
+# fr = {
+# 'lexical_f0.5': \
+# '''48.08	47	-1
+# 40.8	46	-1
+# 40.21	46.67	-1
+# 36.52	41.67	-1
+# 28.45	41.67	-1
+# 20.29	41	-1
+# 3.88	38	-1''',
+# 'lexical_f0.8': \
+# '''57.34	-1	-1
+# 40.48	-1	-1
+# 37.25	-1	-1
+# 34.87	-1	-1
+# 36.67	-1	-1
+# 26.08	-1	-1
+# 12.45	-1	-1''',
+# 'phonological': \
+# '''57.34	-1	-1
+# 55.08	-1	-1
+# 50.76	-1	-1
+# 47.95	-1	-1
+# 37.53	-1	-1
+# 19.45	-1	-1''',
+# 'morphological': \
+# '''57.34	-1	-1
+# 53.9	-1	-1
+# 52.65	-1	-1
+# 48.81	-1	-1
+# 44.92	-1	-1
+# 45.27	-1	-1'''
+# }

@@ -26,3 +26,5 @@ posteriors/lexicons_raw/*
 noiser_artifacts_archive/*
 posteriors/text.txt
 analysis/plots/*
+posteriors/phon_temp.txt
+posteriors/phon_temp2.txt

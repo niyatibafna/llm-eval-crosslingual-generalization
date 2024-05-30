@@ -17,7 +17,8 @@ We do the second of these. First we compute phonological change, then morphologi
 and finally lexical change. Lexical change is only counted for words that are not affected
 by the other types of change.
 '''
-debug = True
+debug = False
+debug_phon = False
 
 import json
 from typing import List
@@ -33,7 +34,7 @@ from get_lexicons import json_to_list_of_pairs
 
 class Posterior:
 
-    def __init__(self, lang, bil_lexicon, src_vocab = None, tgt_vocab = None, \
+    def __init__(self, lang, bil_lexicon_json_file, src_text_file, \
                  noise_types: List = list()):
         '''
         Args: 
@@ -44,10 +45,39 @@ class Posterior:
             tgt_vocab (dict): frequency map of lrl vocabulary
         '''
         self.lang = lang
-        self.bil_lexicon = bil_lexicon
-        self.src_vocab = src_vocab
+        self.bil_lexicon = json_to_list_of_pairs(bil_lexicon_json_file)
+
+        self.src_vocab = self.get_vocab(src_text_file)
+        tgt_vocab = defaultdict(lambda: 0)
+        for (_, tgt) in self.bil_lexicon:
+            tgt_vocab[tgt] += 1
         self.tgt_vocab = tgt_vocab
+
         self.tag2wordlist = self.get_tag2wordlist()
+
+    def get_vocab(self, text_file):
+        '''Initialize vocabulary from vocab file'''
+        print(f"Initializing vocabulary from {text_file}...")
+        vocab = defaultdict(lambda: 0)
+        for line in open(text_file):
+            words = line.strip().split()
+            for word in words:
+                # Remove punctuation
+                punctuation_and_bad_chars = "»«.,!?()[]{}\"'`:;'/\\-–—~_<>|@#$%^&*+=\u200b\u200c\u200d\u200e\u200f"
+                word = word.strip(punctuation_and_bad_chars)
+                # If word has numeric characters, skip
+                if any(char.isdigit() for char in word):
+                    continue
+                # All characters in word must be in character set
+                # if not all(char in self.character_set for char in word):
+                #     print(f"Not in character set: {word}")
+                #     continue
+                                
+                vocab[word.lower()] += 1
+        print(f"Finished initializing vocabulary from {text_file}!")
+        print(f"Length of vocab: {len(vocab)}")
+
+        return vocab
 
     def get_tag2wordlist(self):
         '''Get tag2wordlist from the JSON file'''
@@ -74,26 +104,76 @@ class Posterior:
         count_content = 0
         total_func, total_content = 0, 0
         for (src, tgt) in self.bil_lexicon:
-            if src != tgt and tgt not in self.src_vocab: # Try without this check
-                if self.is_word_functional(src):
+            if self.is_word_functional(src):
+                if src != tgt:
                     count_func += 1
                     if debug:
                         print(f"Functional word: {src} -> {tgt}")
-                else:
+                total_func += 1
+            else:
+                if src != tgt and tgt not in self.src_vocab: # Try without this check
                     # We also want to check that the words don't have the same stem (because that 
                     # would be a morphological change, not a lexical change)
                     if not self.same_stem(src, tgt):
                         count_content += 1
                         if debug:
                             print(f"Content word: {src} -> {tgt}")
-            if self.is_word_functional(src):
-                total_func += 1
-            else:
                 total_content += 1
-
         
         return count_func/total_func, count_content/total_content
     
+   
+    def min_ops(self, src, tgt):
+        '''
+        Find NED and
+        Find minimum list of operations to convert src to tgt in the following format
+        ops (list): [(src_pos, tgt_pos, operation)]. 
+        For replacements, src[src_pos] --> tgt[tgt_pos]
+
+        Returns: 
+            ned (float): normalized edit distance
+            ops (list): list of operations
+        '''
+        n = len(src)
+        m = len(tgt)
+        dp = [[0 for _ in range(m+1)] for _ in range(n+1)]
+        for i in range(n+1):
+            dp[i][0] = i
+        for j in range(m+1):
+            dp[0][j] = j
+        for i in range(1, n+1):
+            for j in range(1, m+1):
+                if src[i-1] == tgt[j-1]:
+                    dp[i][j] = dp[i-1][j-1]
+                else:
+                    dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+        i, j = n, m
+        ops = []
+        while i > 0 and j > 0:
+            if src[i-1] == tgt[j-1]:
+                i -= 1
+                j -= 1
+            else:
+                if dp[i][j] == 1 + dp[i-1][j-1]:
+                    ops.append((i-1, j-1, "replace"))
+                    i -= 1
+                    j -= 1
+                elif dp[i][j] == 1 + dp[i-1][j]:
+                    ops.append((i-1, j, "delete"))
+                    i -= 1
+                else:
+                    ops.append((i, j-1, "insert"))
+                    j -= 1
+        while i > 0:
+            ops.append((i-1, j, "delete"))
+            i -= 1
+        while j > 0:
+            ops.append((i, j-1, "insert"))
+            j -= 1
+
+        ned = dp[n][m]/max(n, m)
+        return ned, ops
+
     def post_phonological_noiser(self):
         '''
         Find theta_phon i.e. the proportion of character ngrams with a new middle character.
@@ -105,7 +185,48 @@ class Posterior:
         There are a number of issues with the above, but there are also the same problems with the original
         noiser, so it's okay. Or at least, it's consistently bad.
         '''
-        pass
+        lang_specific_ned_thresholds = {
+            "hin": 0.5,
+            "spa": 0.4,
+            "deu": 0.4
+        }
+        threshold = lang_specific_ned_thresholds.get(self.lang, 0.4)
+        total_ngrams = defaultdict(lambda: 0)
+        changed_ngrams = defaultdict(lambda: 0)
+        for (src, tgt) in self.bil_lexicon:
+            if src == tgt:
+                continue
+            if debug_phon:
+                print(f"Source: {src}, Target: {tgt}")
+            src = "<" + src + ">"
+            tgt = "<" + tgt + ">"
+            ned, ops = self.min_ops(src, tgt)
+            print(f"NED: {ned}")
+            print(f"Ops: {ops}")
+            if ned > threshold:
+                print(f"Too high NED")
+                continue
+            for i in range(len(ops)):
+                src_pos, tgt_pos, op = ops[i]
+                if op == "replace":
+                    if src[src_pos] == tgt[tgt_pos]:
+                        continue
+                    if src_pos == 0 or tgt_pos == 0 or src_pos == len(src) - 1 or tgt_pos == len(tgt) - 1:
+                        continue
+                    if src[src_pos - 1] == tgt[tgt_pos - 1] and src[src_pos + 1] == tgt[tgt_pos + 1]:
+                        if debug_phon:
+                            print(f"Changed ngram: {src[src_pos-1:src_pos+2]}-->{tgt[tgt_pos-1:tgt_pos+2]}")
+                        changed_ngrams[src[src_pos-1:src_pos+2]] += 1
+            for i in range(1, len(src) - 1):
+                total_ngrams[src[i-1:i+2]] += 1
+        
+        theta_per_ngram = {ngram: changed_ngrams[ngram]/total_ngrams[ngram] for ngram in total_ngrams}
+        theta_phon = sum(theta_per_ngram.values())/len(theta_per_ngram)
+
+        if debug_phon:
+            print(f"theta_phon: {theta_phon}")
+        return theta_phon
+
 
     def get_suffix_frequency(self, vocab):
         '''Get suffix frequency map from vocab
@@ -244,32 +365,64 @@ related_lrls = {
         "deu": {"dan", "isl", "swe"},
         "arb": {"acm", "acq", "aeb", "ajp", "apc", "ars", "ary", "arz"},
     }
+iso3_to_iso2 = {
+    "hin": "hi",
+    "ind": "id",
+    "spa": "es",
+    "fra": "fr",
+    "deu": "de",
+    "arb": "ar",
+}
+
+posteriors = defaultdict(lambda: dict())
 
 for src_lang in related_lrls:
     for tgt_lang in sorted(list(related_lrls[src_lang])):
-        if src_lang != "hin" or tgt_lang != "mai":
-            continue
-        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons/{src_lang}_{tgt_lang}.json"
-        bil_lexicon = json_to_list_of_pairs(bil_lexicon_json_file)
-        src_vocab = defaultdict(lambda: 0)
-        tgt_vocab = defaultdict(lambda: 0)
-        for (src, tgt) in bil_lexicon:
-            src_vocab[src] += 1
-            tgt_vocab[tgt] += 1
-
-        post = Posterior(src_lang, bil_lexicon, src_vocab, tgt_vocab)
+        # if src_lang not in {"deu"}:
+        #     continue
+        print(f"Source language: {src_lang}, Target language: {tgt_lang}")
+        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons_raw/{src_lang}_{tgt_lang}.json"
+        src_text_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/{iso3_to_iso2[src_lang]}/mmlu_{iso3_to_iso2[src_lang]}.txt"
+        
+        post = Posterior(src_lang, bil_lexicon_json_file, src_text_file)
         # print(f"LANGUAGES: {src_lang} -> {tgt_lang}")
-        print("Lexical noiser: (content, functional)")
-        theta_c, theta_f =  post.post_lexical_noiser()
+        print("Lexical noiser: (functional, content)")
+        theta_f, theta_c =  post.post_lexical_noiser()
         print(round(theta_c, 2))
         print(round(theta_f, 2))
         print("Morphological noiser:")
         theta_morph = post.post_morphological_noiser()
-        print(round(theta_morph, 2))
+        print("Phonological noiser:")
+        theta_phon = post.post_phonological_noiser()
+        print(f"Theta content: {round(theta_c, 2)}")
+        print(f"Theta func: {round(theta_f, 2)}")
+        print(f"Theta morph: {round(theta_morph, 2)}")
+        print(f"Theta phon: {round(theta_phon, 2)}")
         print("\n\n\n")
         # print(tgt_lang)
+        posteriors[src_lang][tgt_lang] = (round(theta_f, 2), round(theta_c, 2), \
+                                          round(theta_morph, 2), round(theta_phon, 2)) 
 
-# # Print all related langs in vertical line
-# for src_lang in related_lrls:
-#     for tgt_lang in related_lrls[src_lang]:
-#         print(f"{tgt_lang}")
+
+# Print all 
+for src_lang in posteriors:
+    print(f"Source language: {src_lang}")
+    print(f"theta_f")
+    for tgt_lang in sorted(posteriors[src_lang]):
+        # print(f"Source language: {src_lang}, Target language: {tgt_lang}")
+        print(posteriors[src_lang][tgt_lang][0])
+
+    print(f"theta_c")
+    for tgt_lang in sorted(posteriors[src_lang]):
+        # print(f"Source language: {src_lang}, Target language: {tgt_lang}")
+        print(posteriors[src_lang][tgt_lang][1])
+
+    print(f"theta_morph")
+    for tgt_lang in sorted(posteriors[src_lang]):
+        # print(f"Source language: {src_lang}, Target language: {tgt_lang}")
+        print(posteriors[src_lang][tgt_lang][2])
+    
+    print(f"theta_phon")
+    for tgt_lang in sorted(posteriors[src_lang]):
+        # print(f"Source language: {src_lang}, Target language: {tgt_lang}")
+        print(posteriors[src_lang][tgt_lang][3])

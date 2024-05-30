@@ -27,4 +27,4 @@ noiser_artifacts_archive/*
 posteriors/text.txt
 analysis/plots/*
 posteriors/phon_temp.txt
-posteriors/phon_temp2.txt
+posteriors/phon_temp1.txt

@@ -545,22 +545,22 @@ for lang, lang_results in results.items():
     print("\n\n\n")
 
 ### Points on plots obtained from noise parameter posteriors on real language eval data
-posteriors_str = '''0	0	0
-0.15	0.67	0.26
-0.24	0.79	0.32
-0.19	0.67	0.24
-0.14	0.7	0.26
-0.2	0.81	0.34
-0	0	0
-0.19	0.46	0.13
-0	0	0
-0.34	0.78	0.31
-0	0	0
-0.57	0.88	0.73
-0	0	0
-0.73	0.98	0.74
-0.88	0.99	0.71
-0.75	0.99	0.79'''
+posteriors_str = '''0	0	0	0
+0.15	0.67	0.26	0.05
+0.24	0.79	0.32	0.07
+0.19	0.67	0.24	0.05
+0.14	0.7	0.26	0.05
+0.2	0.81	0.34	0.04
+0	0	0	0
+0.19	0.46	0.13	0.06
+0	0	0	0
+0.34	0.78	0.31	0.06
+0	0	0	0
+0.57	0.88	0.73	0.09
+0	0	0	0
+0.73	0.98	0.74	0.07
+0.88	0.99	0.71	0.11
+0.75	0.99	0.79	0.06'''
 
 degradations = '''0
 34.39
@@ -596,8 +596,8 @@ dan
 isl
 swe'''
 
-posteriors = [(float(x), float(y), float(z)) \
-              for x, y, z in [line.split() for line in posteriors_str.split("\n")]]
+posteriors = [(float(x), float(y), float(z), float(w)) \
+              for x, y, z, w in [line.split() for line in posteriors_str.split("\n")]]
 # post_df = pd.DataFrame(posteriors, columns = ["theta_content", "theta_functional", "theta_morph"])
 degradations = [float(x) for x in degradations.split("\n")]
 
@@ -605,7 +605,7 @@ langs_real_points = [lang for lang in langs_real_points.split("\n")]
 
 noise_type_real_points_xeng = {noise_type: list() for noise_type in curr_noisers}
 for lang, post, deg in zip(langs_real_points, posteriors, degradations):
-    theta_c, theta_f, theta_m = post
+    theta_c, theta_f, theta_m, theta_p = post
     if theta_f >= 0.7:
         noise_type_real_points_xeng["lexical_f0.8"].append((lang, theta_c, deg))
     elif theta_f >= 0.3:
@@ -615,6 +615,7 @@ for lang, post, deg in zip(langs_real_points, posteriors, degradations):
     
     noise_type_real_points_xeng["lexical_c0"].append((lang, theta_f, deg))
     noise_type_real_points_xeng["morphological"].append((lang, theta_m, deg))
+    noise_type_real_points_xeng["phonological"].append((lang, theta_p, deg))
 
 noise_type_real_points = dict()
 noise_type_real_points["X->eng"] = noise_type_real_points_xeng

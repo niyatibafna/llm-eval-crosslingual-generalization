@@ -55,6 +55,15 @@ class Posterior:
 
         self.tag2wordlist = self.get_tag2wordlist()
 
+        # The following thresholds are trying to set a threshold for each language
+        # for NED, for two words to be considered as only having a phonological change
+        self.lang_specific_ned_thresholds = {
+            "hin": 0.5,
+            "spa": 0.4,
+            "deu": 0.4
+        }
+        self.lang_specific_ned_thresholds = defaultdict(lambda: 0.4, self.lang_specific_ned_thresholds)
+
     def get_vocab(self, text_file):
         '''Initialize vocabulary from vocab file'''
         print(f"Initializing vocabulary from {text_file}...")
@@ -115,14 +124,20 @@ class Posterior:
                     # We also want to check that the words don't have the same stem (because that 
                     # would be a morphological change, not a lexical change)
                     if not self.same_stem(src, tgt):
-                        count_content += 1
-                        if debug:
-                            print(f"Content word: {src} -> {tgt}")
+                        # We also want to check that the words don't have a high NED, because that would
+                        # be a phonological change
+                        ned, _ = self.min_ops(src, tgt)
+                        if ned > self.lang_specific_ned_thresholds[self.lang]:
+                            count_content += 1
+                            if debug:
+                                print(f"Content word: {src} -> {tgt}")
                 total_content += 1
         
-        return count_func/total_func, count_content/total_content
+        self.theta_func = count_func/total_func
+        self.theta_content = count_content/total_content
+
+        return self.theta_func, self.theta_content
     
-   
     def min_ops(self, src, tgt):
         '''
         Find NED and
@@ -185,12 +200,7 @@ class Posterior:
         There are a number of issues with the above, but there are also the same problems with the original
         noiser, so it's okay. Or at least, it's consistently bad.
         '''
-        lang_specific_ned_thresholds = {
-            "hin": 0.5,
-            "spa": 0.4,
-            "deu": 0.4
-        }
-        threshold = lang_specific_ned_thresholds.get(self.lang, 0.4)
+        threshold = self.lang_specific_ned_thresholds[self.lang]
         total_ngrams = defaultdict(lambda: 0)
         changed_ngrams = defaultdict(lambda: 0)
         for (src, tgt) in self.bil_lexicon:
@@ -201,10 +211,12 @@ class Posterior:
             src = "<" + src + ">"
             tgt = "<" + tgt + ">"
             ned, ops = self.min_ops(src, tgt)
-            print(f"NED: {ned}")
-            print(f"Ops: {ops}")
+            if debug_phon:
+                print(f"NED: {ned}")
+                print(f"Ops: {ops}")
             if ned > threshold:
-                print(f"Too high NED")
+                if debug_phon:
+                    print(f"Too high NED")
                 continue
             for i in range(len(ops)):
                 src_pos, tgt_pos, op = ops[i]
@@ -244,7 +256,6 @@ class Posterior:
 
         return suffix_freq
 
-    
     def filter_suffix_topk(self, suffix_freq, k = 200):
         '''
         Filter top k suffixes from suffix_freq
@@ -285,11 +296,11 @@ class Posterior:
         1. Find the top k suffixes in the target language (do this in the same way that we do it
             in the noiser - i.e. list the top string suffixes and then find the top k in a language specific
             way)
-        2. For every source word, sample a suffix. If the suffix is not in our collected list, move on.
-        3. If it is, then check if the target word has the same "stem". We do this by checking if the
+        2. For every source word, do the following for all suffixes that lie in our suffix list
+        3. Check if the target word has the same "stem". We do this by checking if the
             src and tgt have some non-trivial shared prefix (let's say length 2 or 33% of the length of the
             word). If they do, then we say that the stem is the same. We can also use NED,
-            but this might be less noisy.
+            but this might be more noisy.
         4. In this case, check if the suffix is the same. If not, then we have a change.
         5. Note that we make this count several times per suffix, and we finally take an average for a given
             suffix to decide whether it was changed or not (i.e. we'll get something like 0.3 for a suffix)
@@ -331,6 +342,7 @@ class Posterior:
 
 
         # Find the proportion of times the suffix was changed
+        ##### REESTIMATE THETA_MORPH BASED ON THETA_CONTENT!!! #####
         theta_morph = 0
         for suffix in src_suffix_freq:
             if suffix_counts[suffix] == 0:

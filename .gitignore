@@ -29,3 +29,7 @@ analysis/plots/*
 posteriors/phon_temp.txt
 posteriors/phon_temp1.txt
 noiser_artifacts_runs/*
+posteriors/google_translate_lexicons/*
+posteriors/morph_temp.txt
+posteriors/morph_text.txt
+posteriors/logs/fra_post.txt

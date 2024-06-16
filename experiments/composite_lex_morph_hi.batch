@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=var_lexical    # create a short name for your job
+#SBATCH --job-name=composite    # create a short name for your job
 #SBATCH --nodes=1                # node count
-#SBATCH --ntasks=60              # total number of tasks across all nodes
+#SBATCH --ntasks=18              # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --partition=gpu-a100          # Name of the partition
 # #SBATCH --exclude=e01
@@ -11,9 +11,9 @@
 #SBATCH --mem=50G                # Total memory allocated
 #SBATCH --hint=multithread       # we get logical cores (threads) not physical (cores)
 #SBATCH --time=1:00:00          # total run time limit (HH:MM:SS)
-#SBATCH --array=0-59
-#SBATCH --output=logs/var_lexical_var_%a.out   # output file name
-#SBATCH --error=logs/var_lexical_var_%a.out    # error file name
+#SBATCH --array=0-17
+#SBATCH --output=logs/bloomz_composite_lex_morph_%a.out   # output file name
+#SBATCH --error=logs/bloomz_composite_lex_morph_%a.out    # error file name
 
 
 echo "### Running $SLURM_JOB_NAME ###"
@@ -46,42 +46,22 @@ cd "/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/mlmm-evaluatio
 # bash scripts/run.sh vi openai-community/gpt2 
 
 
-num_langs=2
 num_tasks=3
-num_var_ex=10
+num_params=6
 # langs=("en" "id" "hi" "ar" "es" "de" "fr") # #langs = 7
-# langs=("en" "hi" "id" "es" "fr") # #langs = 5
-# langs=("en" "id" "hi" "ar" "es" "de") # #langs = 6
-langs=("hi" "ar") # #langs = 1
-tasks_prod_params=$((num_tasks * num_var_ex))
-lang=${langs[$SLURM_ARRAY_TASK_ID / $tasks_prod_params]}
-# tasks=(xwinograd_${lang} xstory_cloze_${lang} xcopa_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
-# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 8
-# tasks=(xstory_cloze_${lang} arc_${lang} hellaswag_${lang} mmlu_${lang} \
-# truthfulqa_${lang} flores200-${lang}-en) # #tasks = 6
-# tasks=(truthfulqa_${lang}) # #tasks = 1
-# tasks=("xnli_${lang}") # #tasks = 1
+lang="hi"
+
 tasks=(flores200-${lang}-en xstory_cloze_${lang} xnli_mcq_${lang}) # #tasks = 3
-# tasks=(xnli_mcq_${lang}) # #tasks = 3
-# tasks=(flores200-${lang}-en) # #tasks = 1
-# tasks=(arc_${lang} hellaswag_${lang} mmlu_${lang} \
-# truthfulqa_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 6
-# tasks=(xnli_${lang} xstory_cloze_${lang} xwinograd_${lang} xcopa_${lang}) # #tasks = 4
+task=${tasks[$SLURM_ARRAY_TASK_ID / $num_params]}
 
-x=$((SLURM_ARRAY_TASK_ID % tasks_prod_params))
-task=${tasks[$((x / num_var_ex))]}
-var_num=$((x % num_var_ex))
-
-theta_content_global=0.3
+theta_content_globals=(0.05 0.1 0.2 0.3 0.5 0.8)
+theta_content_global=${theta_content_globals[$SLURM_ARRAY_TASK_ID % $num_params]}
 theta_func_global=0.5
-
+theta_morph=0.5
 
 echo "lang: $lang"
 echo "task: $task"
 echo "theta_content_global: $theta_content_global"
-echo "theta_func_global: $theta_func_global"
-
-
 
 # model="hf-seq2seq"
 model="hf-auto"
@@ -90,22 +70,14 @@ model="hf-auto"
 model_path="bigscience/bloomz-7b1" 
 model_key="bloomz7b"
 
-
-# tasks=arc_${lang},hellaswag_${lang},mmlu_${lang}
-# tasks=wmt16-de-en
-# tasks="xnli_${lang}"
-# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang},xnli_${lang}"
-# tasks="xwinograd_${lang},xstory_cloze_${lang},xcopa_${lang}"
 device=cuda
-# theta=0
-# all_noise_params="character_level-lang=$lang,swap_theta=$theta"
 
-exp_key="var-lexical-lang=$lang,theta_content_global=$theta_content_global,theta_func_global=$theta_func_global-run~$var_num"
-dataset_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/$lang/"
-dataset_file="${dataset_dir}/${task}.txt"
-output_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/lexical/$lang/$exp_key"
+exp_key="composite-lexical-lang=$lang,theta_content_global=$theta_content_global,theta_func_global=$theta_func_global,theta_morph=$theta_morph"
+dataset_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/$lang"
+dataset_file="${dataset_dir}/mmlu_$lang.txt"
+output_dir="/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noiser_artifacts/composite/$exp_key"
 mkdir -p ${output_dir}
-all_noise_params_str="lexical-lang=$lang,theta_content_global=$theta_content_global,theta_func_global=$theta_func_global,text_file=<$dataset_file>,output_dir=<$output_dir>"
+all_noise_params_str="lexical-lang=$lang,theta_content_global=$theta_content_global,theta_func_global=$theta_func_global,text_file=<$dataset_file>,output_dir=<$output_dir>;morph-lang=${lang},theta_morph_global=$theta_morph,text_file=<$dataset_file>,output_dir=<$output_dir>"
 
 
 limit=300
@@ -144,3 +116,4 @@ fi
 # --output_base_path is a dir where the noised data will be stored along with model outputs for each task example,
 # the filename is automatically generated as task_lang_write_out.json
 # --output_path is the file where the results JSON will be stored for the entire run, with the noise params as a JSON key
+

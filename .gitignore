@@ -28,3 +28,4 @@ posteriors/text.txt
 analysis/plots/*
 posteriors/phon_temp.txt
 posteriors/phon_temp1.txt
+noiser_artifacts_runs/*

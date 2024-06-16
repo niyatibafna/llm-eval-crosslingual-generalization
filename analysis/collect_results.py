@@ -69,7 +69,8 @@ def get_metric_from_results_file(results, task_name):
     #     print(results.keys())
     metric = None
     for exp_key, exp_results in results.items():
-        if "xnli" in task_name and "mcq" not in exp_key:
+        # print(exp_results)
+        if "xnli" in task_name and "mcq" not in task_name:
             # return -1
             continue
         assert len(exp_results["results"]) == 1, "Results file should have only one task"
@@ -157,12 +158,14 @@ def pretty_print_baseline(results, langs, tasks):
 
 
 if __name__ == "__main__":
-    param_set = ["0", "0.01", "0.05", "0.1", "0.2", "0.3", "0.5", "0.8"]
+    param_set = ["0", "0.05", "0.1", "0.2", "0.3", "0.5", "0.8"]
+    # param_set = ["0.05", "0.1", "0.2", "0.3", "0.5", "0.8"]
+    # param_set = [str(i) for i in range(0, 10)]
     # param_set = ["0","0.01", "0.05", "0.10", "0.20", "0.3", "0.5", "0.8"]
     # param_set = ["0", "0.1", "0.2", "0.3", "0.5", "0.8", "1"]
     # param_set = ["0.2", "0.4", "0.6", "0.8", "1"]
     # langs = ["en", "hi", "id", "fr", "es", "de", "ar"]
-    langs = ["de", "fr"]
+    langs = ["hi"]
 #     langs = [
 #     "awa",
 #     "mai",
@@ -187,26 +190,74 @@ if __name__ == "__main__":
 
     # langs = ["de", "fr"]
     # tasks = ["xstory_cloze", "xnli", "arc", "hellaswag", "mmlu", "xwinograd", "xcopa", "xnli_mcq", "truthfulqa"]
-    tasks = ["xnli_mcq", "flores200", "xstory_cloze"]
-    # tasks = ["xnli_mcq"]
+    # tasks = ["xnli_mcq", "flores200", "xstory_cloze"]
+    tasks = ["xnli_mcq"]
+
+    # for lang in langs:
+    #     for task in tasks:
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morphls-lang={lang},theta_morph_global=<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-lexical-lang={lang},theta_content_global=0.3,theta_func_global=0.5-run~<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/composite-lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.5,theta_morph=0.5~limit-300"
+    #         folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results_runs/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8-run~<placeholder2>~limit-300"
+            
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-morph-lang={lang},theta_morph_global=0.5-run~<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-phonological-lang={lang},theta_phon=0.1-run~<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=0,theta_func_global=<placeholder>~limit-300"
+    #         # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+    #         if task == "flores200":
+    #             task = f"flores200-{lang}-en"
+    #         else:
+    #             task = f"{task}_{lang}"
+    #         print(f"LANG: {lang}, TASK: {task}")
+    #         results = get_results(param_set, folder_name_expr, task)
+    #         print(results)
+    #         print_in_vertical_row(param_set, results)
+    
 
     for lang in langs:
         for task in tasks:
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morphls-lang={lang},theta_morph_global=<placeholder>~limit-300"
-            folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=0,theta_func_global=<placeholder>~limit-300"
-            # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
             if task == "flores200":
                 task = f"flores200-{lang}-en"
             else:
                 task = f"{task}_{lang}"
-            print(f"LANG: {lang}, TASK: {task}")
-            results = get_results(param_set, folder_name_expr, task)
-            print(results)
-            print_in_vertical_row(param_set, results)
+            all_runs_results = dict()
+            for run in range(0,10):
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/mt0xxlmt~0shot/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/morphls-lang={lang},theta_morph_global=<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-lexical-lang={lang},theta_content_global=0.3,theta_func_global=0.5-run~<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/composite-lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.5,theta_morph=0.5~limit-300"
+                folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results_runs/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=<placeholder>,theta_func_global=0.8-run~{run}~limit-300"
+                
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-morph-lang={lang},theta_morph_global=0.5-run~<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/var-phonological-lang={lang},theta_phon=0.1-run~<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/lexical-lang={lang},theta_content_global=0,theta_func_global=<placeholder>~limit-300"
+                # folder_name_expr = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/outputs/results/bloomz7b/{lang}/phonological-lang={lang},theta_phon=<placeholder>~limit-300"
+                
+                print(f"LANG: {lang}, TASK: {task}, RUN: {run}")
+                results = get_results(param_set, folder_name_expr, task)
+                print(results)
+                all_runs_results[run] = {param_value: results[param_value][0] for param_value in param_set}
+            
+            # Mean over runs
+            print(f"All runs results: {all_runs_results}")
+
+            # Make a table with runs as rows and param values as columns
+            df = pd.DataFrame(all_runs_results)
+            print(df)
+
+            
+            mean_results = dict()
+            for param_value in param_set:
+                total_found = sum([1 for run in range(0,10) if all_runs_results[run][param_value] != -1])
+                mean_results[param_value] = round(sum([all_runs_results[run][param_value] for run in range(0,10) if all_runs_results[run][param_value] != -1]) / total_found, 2)
+            
+            print(f"Mean results: {mean_results}")
+            print_in_vertical_row(param_set, pd.DataFrame(mean_results, index=[0]))
     
+
 
     # Baseline results:
     # lang_task = defaultdict(lambda: dict())

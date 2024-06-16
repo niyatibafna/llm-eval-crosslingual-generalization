@@ -1,5 +1,7 @@
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
+out_filename = "plots/main_results.pdf"
 def parse_excel_table_into_results(lang_results, all_noise_param_ranges, tasks = ['X->eng', 'XNLI', 'XStoryCloze']):
     results_lang_all_noisers = {}
     for noise_type, str_results in lang_results.items():
@@ -70,10 +72,45 @@ import numpy as np
 def plot_results(results, tasks, curr_noisers, \
         all_noise_param_ranges, noise_type_real_points = None):
 
-    plt.rcParams.update({'font.size': 22})
+    # Use latex 
+    # plt.rc('text', usetex=True)
+
+    title_noise_type_to_idx = {
+        'lexical_c0': 1,
+        'lexical_f0': 2,
+        'lexical_f0.5': 3,
+        'lexical_f0.8': 4,
+        'phonological': 5,
+        'morphological': 6,
+    }
+    title_task_to_idx = {
+        'X->eng': "a",
+        'XNLI': "b",
+        'XStoryCloze': "c"
+    }
+    
+    title_noise_type = {
+        'lexical_f0': r'Lexical (Content $\vert$ $\theta_f = 0$) : $\psi^{f,c}_{0,*}$',
+        'lexical_f0.5': r'Lexical (Content $\vert$ $\theta_f = 0.5$) : $\psi^{f,c}_{0.5,*}$',
+        'lexical_f0.8': r'Lexical (Content $\vert$ $\theta_f = 0.8$) : $\psi^{f,c}_{0.8,*}$',
+        'lexical_c0': r'Lexical (Function $\vert$ $\theta_c = 0$) : $\psi^{f,c}_{*,0}$',
+        'morphological': r'Morphological : $\psi^{m}_{*}$',
+        'phonological': r'Phonological : $\psi^{p}_{*}$'
+    }
+    xlabels = {
+        'lexical_f0': r'$\theta_c$',
+        'lexical_f0.5': r'$\theta_c$',
+        'lexical_f0.8': r'$\theta_c$',
+        'lexical_c0': r'$\theta_f$',
+        'morphological': r'$\theta_m$',
+        'phonological': r'$\theta_p$'
+    }
+
+    # plt.rcParams.update({'font.size': 26})
+    point_size = 60
     num_tasks = len(tasks)
     num_noisers = len(curr_noisers)
-    fig, axs = plt.subplots(num_noisers, num_tasks, figsize=(50, 50))
+    fig, axs = plt.subplots(num_noisers, num_tasks, figsize=(16, 24))
     for j, noise_type in enumerate(curr_noisers):
         for i, task in enumerate(tasks):
             if num_noisers == 1:
@@ -82,14 +119,25 @@ def plot_results(results, tasks, curr_noisers, \
                 ax = axs[j, i]  # Indexing both dimensions
             
             # Lineplots with each language a different color
-            colour_scheme = plt.get_cmap('tab20', len(results.keys()))
+            # colour_scheme = plt.get_cmap('viridis', len(results.keys()))
+            colors_list = ['#1f77b4', '#ff7f0e', '#2ca02c', '#ffdd57', '#17becf', '#8c564b', '#7f7f7f']
+
+            custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', colors_list, N=len(colors_list))
+
+            # Example usage:
+            colour_scheme = custom_cmap
+            # print(colors)
             for lang, lang_results in results.items():
                 x = list(lang_results[noise_type][task].keys())
                 y = list(lang_results[noise_type][task].values())
                 y = [y_val if y_val != -1 else None for y_val in y ]
                 # markersize = 20
                 if any(y):
-                    ax.scatter(x, y, label=lang, marker = "x", s = 400, linewidths = 8, \
+                    # Plotting 0,0 for morphological noiser
+                    if noise_type == "morphological":
+                        x = [0] + x
+                        y = [0] + y
+                    ax.scatter(x, y, label=lang, marker = "x", s = point_size, linewidths = 3, \
                            color=colour_scheme(list(results.keys()).index(lang)))
 
             # For each noise_param, plot the mean over languages, and a regression line
@@ -107,20 +155,24 @@ def plot_results(results, tasks, curr_noisers, \
                     continue
                 Y.append(np.mean(y))
                 X.append(noise_param)
+            
+            if noise_type == "morphological":
+                X = [0] + X
+                Y = [0] + Y
 
             # Plot regression line with X and Y
             m, b = np.polyfit(X, Y, 1)
-            ax.plot(X, [m*x + b for x in X], color = "black", linestyle = "--", linewidth = 3)
+            ax.plot(X, [m*x + b for x in X], color = "black", linestyle = "--", linewidth = 2)
 
             # Plot the mean
-            ax.scatter(X, Y, label = "mean", marker = "o", s = 100, color = "black")
+            ax.scatter(X, Y, label = "mean", marker = "o", s = 15, color = "black")
 
 
             ax.legend()
 
-            ax.set_title(task + " " + noise_type)
-            ax.set_xlabel("Noise Param")
-            ax.set_ylabel("% Degradation in Performance")
+            ax.set_title(f"({title_noise_type_to_idx[noise_type]}{title_task_to_idx[task]}) {task} , {title_noise_type[noise_type]}")
+            ax.set_xlabel(xlabels[noise_type])
+            ax.set_ylabel("Performance Degradation (%)")
             xticks = list([x/10 for x in range(11)])
             yticks = list([y*10 for y in range(11)])
             ax.set_yticks(yticks)
@@ -137,15 +189,30 @@ def plot_results(results, tasks, curr_noisers, \
                     if x == 0 and y == 0:
                         continue
                     # The point should be annotated with the name of the language
-                    ax.annotate(lang, (x, y), textcoords="offset points", xytext=(0,10), ha='center')
+                    ax.annotate(lang, (x, y), textcoords="offset points", xytext=(10,0), ha='center')
                     # Choose a different colour for the real language points
-                    ax.scatter(x, y, color = "purple", s = 400, marker = "*")
+                    ax.scatter(x, y, color = "purple", s = point_size, marker = '^')
+
+                # Plot a red dotted regression line for the real language points
+                X = [x for lang, x, y in noise_type_real_points[task][noise_type]]
+                Y = [y for lang, x, y in noise_type_real_points[task][noise_type]]
+                
+                if all([y == 0 for y in Y]):
+                    continue
+
+                if noise_type == 'lexical_f0.5':
+                    continue
+
+                m, b = np.polyfit(X, Y, 1)
+                ax.plot(X, [m*x + b for x in X], color = "red", linestyle = "--", linewidth = 1)
+                    
+
 
                     
 
 
     plt.tight_layout()  # Adjust subplots to fit into figure area.
-    plt.savefig("plots/lineplots_reallangs.png")
+    plt.savefig(out_filename)
 
 
 es = { \
@@ -525,9 +592,6 @@ baselines = {
     } for lang in results.keys()
 }
 
-print("\n\n\n\n BASELINES")
-print(baselines)
-
 
 results = normalize_and_transform_scores(results, baselines, tasks = tasks)
 # Pretty print
@@ -548,19 +612,19 @@ for lang, lang_results in results.items():
 posteriors_str = '''0	0	0	0
 0.15	0.67	0.26	0.05
 0.24	0.79	0.32	0.07
-0.19	0.67	0.24	0.05
+0.18	0.67	0.24	0.05
 0.14	0.7	0.26	0.05
 0.2	0.81	0.34	0.04
 0	0	0	0
 0.19	0.46	0.13	0.06
 0	0	0	0
-0.34	0.78	0.31	0.06
+0.22	0.71	0.2	0.11
 0	0	0	0
-0.57	0.88	0.73	0.09
+0.47	0.88	0.73	0.09
 0	0	0	0
-0.73	0.98	0.74	0.07
-0.88	0.99	0.71	0.11
-0.75	0.99	0.79	0.06'''
+0.5	0.98	0.71	0.1
+0.75	0.99	0.68	0.15
+0.56	0.99	0.7	0.1'''
 
 degradations = '''0
 34.39
@@ -606,7 +670,7 @@ langs_real_points = [lang for lang in langs_real_points.split("\n")]
 noise_type_real_points_xeng = {noise_type: list() for noise_type in curr_noisers}
 for lang, post, deg in zip(langs_real_points, posteriors, degradations):
     theta_c, theta_f, theta_m, theta_p = post
-    if theta_f >= 0.7:
+    if theta_f > 0.7:
         noise_type_real_points_xeng["lexical_f0.8"].append((lang, theta_c, deg))
     elif theta_f >= 0.3:
         noise_type_real_points_xeng["lexical_f0.5"].append((lang, theta_c, deg))
@@ -622,6 +686,8 @@ noise_type_real_points["X->eng"] = noise_type_real_points_xeng
 
 plot_results(results, tasks, curr_noisers, all_noise_param_ranges, noise_type_real_points = noise_type_real_points)
 
+print("\n\n\n\n BASELINES")
+print(baselines)
 
 # Archive:
 ## This has the old morph results: without language specific thresholds, and not noising aux 

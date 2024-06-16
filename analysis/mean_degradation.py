@@ -132,239 +132,6 @@ def plot_results(results, tasks, curr_noisers, all_noise_param_ranges):
     plt.savefig("plots/lineplots.png")
 
 
-# Archive:
-## This has the old morph results: without language specific thresholds, and not noising aux 
-## XNLI noises the label words for all EXCEPT lexical_f0.5 (which has new XNLI results)
-# es = { \
-# 'lexical_f0.5': \
-# '''32.59	43.67	66.67
-# 30.52	43	69.33
-# 27.13	42.67	67
-# 22.7	39.67	63.33
-# 19.97	39	64
-# 9.21	35.67	60.33
-# 1.95	33.67	55''',
-# 'lexical': \
-# '''42.91	49.67	72.33
-# 26.57	43	68.33
-# 26.52	41.67	63
-# 28.1	41.33	66.33
-# 15.01	41.67	65
-# 13.56	38.67	62
-# 5.72	37.33	57.33''',
-# 'phonological': \
-# '''42.91	49.67	72.33
-# 41.92	49	67
-# 34.74	46.67	70
-# 30.34	37.33	66
-# 16.02	35	63.33
-# 10.64	35.67	59.67''',
-# 'morphological': \
-# '''42.91	49.67	72.33
-# 40.78	48	70.33
-# 34.5	44	68.67
-# 33.62	40	70.67
-# 32.04	40.33	66.33
-# 30	35.33	65.67'''
-# }
-
-# hi = {
-# 'lexical_f0.5': \
-# '''44.86	48.67	61.67
-# 33.92	47.67	61
-# 30.15	38	52.33
-# 19.71	37.67	60.67
-# 21.79	43.67	56.33
-# 11.03	42	56.33
-# 2.23	36	51''',
-# 'lexical': \
-# '''56.44	51	63.67
-# 27.05	42.33	56.33
-# 27.83	36	58
-# 22.53	39	55.67
-# 19.11	37.33	52
-# 13.64	40	55
-# 5.8	-1	-1''',
-# 'phonological': \
-# '''56.44	51	63.67
-# 56.13	44	59.67
-# 45.99	47.67	59.67
-# 36.29	45	58
-# 16.81	35	54
-# 7.46	38.33	48''',
-# 'morphological': \
-# '''56.44	51	63.67
-# 53.64	50.33	62
-# 46.82	47.33	60.67
-# 44.77	50	60.33
-# 42.21	46.33	59.33
-# 38.39	47.33	55.33'''
-# }
-
-# id = {
-# 'lexical_f0.5': \
-# '''49.97	-1	67.67
-# 43.61	-1	66.33
-# 33.59	-1	67
-# 30.94	-1	57.33
-# 24.1	-1	57.67
-# 11.99	-1	58.67
-# 4.82	-1	47''',
-# 'lexical': \
-# '''60	-1	69.33
-# 34.98	-1	61.67
-# 32.04	-1	61
-# 34.81	-1	54.67
-# 22.37	-1	58.67
-# 15.91	-1	55.33
-# 8.73	-1	-1''',
-# 'phonological': \
-# '''60	-1	69.33
-# 58.39	-1	68.67
-# 48.58	-1	63.67
-# 37.99	-1	65
-# 8.81	-1	59.33
-# 3.98	-1	54.67''',
-# 'morphological': \
-# '''60	-1	69.33
-# 49.04	-1	64
-# 50.17	-1	58.33
-# 42.76	-1	61
-# 26.51	-1	56
-# 21.81	-1	58.67'''
-# }
-
-# ar = {
-# 'lexical_f0.5': \
-# '''-1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1''',
-# 'lexical': \
-# '''55.32	46	66
-# 39.9	35	64.33
-# 37.9	35.33	63.33
-# 37.25	39.33	62.67
-# 20.2	36.33	58.67
-# 16.92	40.33	56.33
-# 8.18	-1	-1''',
-# 'phonological': \
-# '''55.32	46	66
-# 53.48	46.67	66
-# 41.01	43.33	60
-# 25.91	43.33	58.67
-# 6.66	33.33	53
-# 3.24	33.67	53.67''',
-# 'morphological': \
-# '''55.32	46	66
-# 49.77	45.33	60.67
-# 44.06	45	55.67
-# 37.36	41.33	57
-# 31.33	39	54.67
-# 23.96	40.67	52'''
-# }
-
-# en = {
-# 'lexical_f0.5': \
-# '''63.88	52	74
-# 70.86	49.67	73.67
-# 64.82	48.67	69.33
-# 58.78	44.33	60.33
-# 45.01	46	64.67
-# 23.85	43	56.33
-# 14.67	38	53.33''',
-# 'lexical': \
-# '''99.53	60.33	77.33
-# 65.29	34.67	72
-# 44.22	34.33	70.67
-# 35.78	49	69
-# 34.36	34.33	63.67
-# 34.79	34.33	62
-# 17.23	-1	-1''',
-# 'phonological': \
-# '''99.53	60.33	77.33
-# 96.22	58.33	75.33
-# 76.92	54.33	69.67
-# 60.93	34.33	63.33
-# 40.32	34.67	63.33
-# 22.74	40.67	60''',
-# 'morphological': \
-# '''99.53	60.33	77.33
-# 87.66	34	72.33
-# 84.9	57	68
-# 69.66	52	66.67
-# 56.96	34.33	61.67
-# 51.1	33.67	59.67'''
-# }
-
-# de = {
-# 'lexical_f0.5': \
-# '''24.64	42.67	-1
-# 22.31	43	-1
-# 17.93	42.33	-1
-# 11.73	38.67	-1
-# 10.43	39	-1
-# 5.2	37	-1
-# 2.03	35.67	-1''',
-# 'lexical': \
-# '''-1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1
-# -1	-1	-1''',
-# 'phonological': \
-# '''-1	47.33	-1
-# -1	46	-1
-# -1	45	-1
-# -1	42.33	-1
-# -1	33.33	-1
-# -1	34.67	-1''',
-# 'morphological': \
-# '''-1	47.33	-1
-# -1	47.33	-1
-# -1	45.67	-1
-# -1	34	-1
-# -1	44.67	-1
-# -1	43.33	-1'''
-# }
-
-# fr = {
-# 'lexical_f0.5': \
-# '''48.08	47	-1
-# 40.8	46	-1
-# 40.21	46.67	-1
-# 36.52	41.67	-1
-# 28.45	41.67	-1
-# 20.29	41	-1
-# 3.88	38	-1''',
-# 'lexical_f0.8': \
-# '''57.34	-1	-1
-# 40.48	-1	-1
-# 37.25	-1	-1
-# 34.87	-1	-1
-# 36.67	-1	-1
-# 26.08	-1	-1
-# 12.45	-1	-1''',
-# 'phonological': \
-# '''57.34	-1	-1
-# 55.08	-1	-1
-# 50.76	-1	-1
-# 47.95	-1	-1
-# 37.53	-1	-1
-# 19.45	-1	-1''',
-# 'morphological': \
-# '''57.34	-1	-1
-# 53.9	-1	-1
-# 52.65	-1	-1
-# 48.81	-1	-1
-# 44.92	-1	-1
-# 45.27	-1	-1'''
-# }
 
 es = { \
 'lexical_c0': \
@@ -392,13 +159,14 @@ es = { \
 9.21	35.67	60.33
 1.95	33.67	55''',
 'lexical_f0.8': \
-'''42.91	49.67	72.33
-26.57	43	68.33
-26.52	41.67	63
+'''28.81	43.33	63.33
+27.47	43	68.33
+21.07	41.67	63
 28.1	41.33	66.33
 15.01	41.67	65
-13.56	38.67	62
-5.72	37.33	57.33''',
+14.15	38.67	62
+5.72	37.33	57.33
+1.33	34.67	53''',
 'phonological': \
 '''42.91	49.67	72.33
 41.92	49	67
@@ -440,13 +208,14 @@ hi = {
 11.03	42	56.33
 2.23	36	51''',
 'lexical_f0.8': \
-'''56.44	51	63.67
+'''25.75	39.67	60.67
 27.05	42.33	56.33
 27.83	36	58
 22.53	39	55.67
 19.11	37.33	52
 13.64	40	55
-5.8	-1	-1''',
+5.8	37	55.67
+1.74	35.67	47''',
 'phonological': \
 '''56.44	51	63.67
 56.13	44	59.67
@@ -464,13 +233,14 @@ hi = {
 
 id = {
 'lexical_f0.8': \
-'''60	-1	69.33
+'''36.87	-1	62
 34.98	-1	61.67
 32.04	-1	61
 34.81	-1	54.67
 22.37	-1	58.67
 15.91	-1	55.33
-8.73	-1	-1''',
+8.73	-1	52.67
+3.02	-1	49.33''',
 'lexical_f0': \
 '''59.12	-1	70
 55.55	-1	68.67
@@ -512,13 +282,14 @@ id = {
 
 ar = {
 'lexical_f0.8': \
-'''55.32	43.33	66
+'''43.56	44	64.33
 39.9	35	64.33
 37.9	35.33	63.33
 37.25	39.33	62.67
 20.2	36.33	58.67
 16.92	40.33	56.33
-8.18	37	-1''',
+8.18	37	56.33
+1.17	34.67	50.67''',
 'lexical_f0': \
 '''56.68	46.33	66
 51.62	45.67	61.67
@@ -560,13 +331,14 @@ ar = {
 
 en = {
 'lexical_f0.8': \
-'''99.53	60.33	77.33
-65.29	34.67	72
-44.22	34.33	70.67
+'''60.09	51	69.67
+65.29	51.67	72
+44.22	51.33	70.67
 35.78	49	69
 34.36	34.33	63.67
-34.79	34.33	62
-17.23	-1	-1''',
+34.79	47.33	62
+17.23	43.33	60
+9.54	38.67	53.33''',
 'lexical_f0': \
 '''98.94	59.67	77.33
 94.97	56.33	74.33
@@ -608,13 +380,14 @@ en = {
 
 de = {
 'lexical_f0.8': \
-'''-1	47.33	-1
--1	39	-1
--1	40	-1
--1	38	-1
--1	38.67	-1
--1	35.67	-1
-4.78	37.33	-1''',
+'''13.11	38	-1
+17.35	39	-1
+12.46	40	-1
+9.58	38	-1
+7.09	38.67	-1
+7.43	35.67	-1
+2.8	37.33	-1
+1.6	34.67	-1''',
 'lexical_f0': \
 '''40.63	47.67	-1
 36.87	48.33	-1
@@ -656,13 +429,14 @@ de = {
 
 fr = {
 'lexical_f0.8': \
-'''57.34	54.67	-1
+'''44.5	44	-1
 40.48	43	-1
 37.25	44.67	-1
 34.87	42	-1
 36.67	39.67	-1
 26.08	42.33	-1
-12.45	40.67	-1''',
+12.45	40.67	-1
+3.03	37	-1''',
 'lexical_f0': \
 '''56.2	54.67	-1
 53.48	53	-1
@@ -703,8 +477,6 @@ fr = {
 }
 
 
-
-
 all_lang_results = {"es": es, "hi": hi, "id": id, "de": de, "ar": ar, "fr": fr, "en": en}
 
 # We'll build a results dictionary with the following structure:
@@ -713,9 +485,9 @@ noise_types = ["lexical_f0", "lexical_f0.5", "lexical_f0.8", "lexical_c0", "morp
 all_noise_param_ranges = {
     'lexical_f0': [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8],
     'lexical_f0.5': [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8],
-    'lexical_f0.8': [0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.5],
+    'lexical_f0.8': [0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8],
     'lexical_c0': [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8],
-    'morphological': [0, 0.2, 0.4, 0.6, 0.8, 1],
+    'morphological': [0.2, 0.4, 0.6, 0.8, 1],
     'phonological': [0, 0.01, 0.05, 0.1, 0.2, 0.3],
 }
 tasks = ['X->eng', 'XNLI', 'XStoryCloze']
@@ -764,8 +536,101 @@ mean_degradations_over_noisetype = {task: {lang: np.mean(list(mean_degradations[
 print(mean_degradations)
 print(mean_degradations_over_noisetype)
 
+print(f"BY TASK")
 # For each task, print lang in sorted order
 for task, lang_results in mean_degradations_over_noisetype.items():
     print(task)
     for lang, mean_degradation in sorted(lang_results.items(), key = lambda x: x[1], reverse = True):
-        print(lang, mean_degradation)
+        print(lang)
+    for lang, mean_degradation in sorted(lang_results.items(), key = lambda x: x[1], reverse = True):
+        print(round(mean_degradation, 1))
+
+
+print(f"BY NOISE TYPE")
+# Mean degradation by noise type and language, over all tasks
+mean_degradations_over_tasks = {noise_type: {lang: np.mean(list(mean_degradations[task][lang][noise_type] for task in tasks)) 
+                                             for lang in results.keys()} for noise_type in curr_noisers}
+print(mean_degradations_over_tasks)
+
+# For each noise type, print lang in sorted order
+for noise_type, lang_results in mean_degradations_over_tasks.items():
+    print(noise_type)
+    for lang, mean_degradation in sorted(lang_results.items(), key = lambda x: x[1], reverse = True):
+        print(lang)
+    for lang, mean_degradation in sorted(lang_results.items(), key = lambda x: x[1], reverse = True):
+        print(round(mean_degradation, 1))
+
+# For each task and noise type, print sorted list of languages
+        
+# for task in tasks:
+#     print(task)
+#     for noise_type in curr_noisers:
+#         print(noise_type)
+#         for lang, mean_degradation in sorted(mean_degradations[task].items(), key = lambda x: x[1][noise_type], reverse = True):
+#             print(lang)
+#         for lang, mean_degradation in sorted(mean_degradations[task].items(), key = lambda x: x[1][noise_type], reverse = True):
+#             print(round(mean_degradation[noise_type], 1))
+#     print("\n\n\n")
+
+# We'll make the following plots:
+## One plot per task
+## X axis: noise types
+## Y axis: mean degradation
+## One point per language (scatter plot)
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.figure(figsize=(4, 2))
+
+def plot_mean_degradations(mean_degradations, tasks, curr_noisers):
+
+    xticklabels = {"lex", "morph", "phon"}
+        
+    # Assign colours to langs
+    colour_scheme = plt.get_cmap('tab20', len(mean_degradations[tasks[0]].keys()))
+
+    # plt.rcParams.update({'font.size': 30})
+    tasks = ['X->eng']
+    num_tasks = len(tasks)
+    fig, axs = plt.subplots(num_tasks, 1, figsize=(4, 2))
+    for i, task in enumerate(tasks):
+        for lang in mean_degradations[task].keys():
+            if -1 in list(mean_degradations[task][lang].values()):
+                continue
+            
+            if num_tasks == 1:
+                ax = axs
+            else:
+                ax = axs[i]
+            x = np.arange(len(curr_noisers))
+            y = [mean_degradations[task][lang][noise_type] for noise_type in curr_noisers]
+            ax.scatter(x, y, label=lang, marker = "x", s = 40, linewidths = 2, \
+                    color=colour_scheme(list(mean_degradations[task].keys()).index(lang)))
+        
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(xticklabels)
+        # ax.set_title(f"{task}, Mean PD% by Noise Type")
+        ax.set_ylabel("Mean PD %")
+        # ax.set_xlabel()
+        # Make legend appear beside figure
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        ax.set_ylim(0, 70)
+        ax.set_xlim(-0.5, len(curr_noisers) - 0.5)
+    plt.tight_layout()  # Adjust subplots to fit into figure area.
+    plt.savefig("plots/mean_degradations.pdf")
+
+print(mean_degradations)
+
+# Let's average all lexical noise into one noise type: lexical
+# For each task and language, average the lexical_f0, lexical_f0.5, lexical_f0.8, lexical_c0 keys
+for task in tasks:
+    for lang in results.keys():
+        mean_degradations[task][lang]["lexical"] = np.mean([mean_degradations[task][lang][noise_type] for noise_type in ["lexical_f0", "lexical_f0.5", "lexical_f0.8", "lexical_c0"]])
+        for noise_type in ["lexical_f0", "lexical_f0.5", "lexical_f0.8", "lexical_c0"]:
+            del mean_degradations[task][lang][noise_type]
+
+curr_noisers = ["lexical", "morphological", "phonological"]
+
+plot_mean_degradations(mean_degradations, tasks, curr_noisers)

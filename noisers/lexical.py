@@ -150,7 +150,7 @@ class LexicalNoiser(Noise):
 
     def record_noiser_artifacts(self):
         '''Record vocab map, number of words switched out'''
-        with open("vocab.txt", "w") as f:
+        with open("lexical_vocab.txt", "w") as f:
             for word in self.vocab:
                 f.write(word + "\n")
         raise NotImplementedError
@@ -233,7 +233,7 @@ class GlobalLexicalNoiser(Noise):
                     continue
                 # All characters in word must be in character set
                 if not all(char in self.character_set for char in word):
-                    print(f"Not in character set: {word}")
+                    # print(f"Not in character set: {word}")
                     continue
                                 
                 vocab[word.lower()] += 1
@@ -416,6 +416,10 @@ class GlobalLexicalNoiser(Noise):
 
         noised_input = list()
         for input_word in input.split():
+            if input_word[0].isupper():
+                # We do not affect proper nouns
+                noised_input.append(input_word)
+                continue
             word = input_word.strip(".,!?").lower()
             if word in self.vocab_map:
                 mapped_word = self.vocab_map[word]

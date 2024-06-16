@@ -207,9 +207,9 @@ class GlobalMorphologicalNoiser(Noise):
                 if any(char.isdigit() for char in word):
                     continue
                 # All characters in word must be in character set
-                if not all(char in self.character_set for char in word):
-                    print(f"Not in character set: {word}")
-                    continue
+                # if not all(char in self.character_set for char in word):
+                #     print(f"Not in character set: {word}")
+                #     continue
                                 
                 vocab[word.lower()] += 1
         print(f"Finished initializing vocabulary from {text_file}!")
@@ -464,6 +464,10 @@ class GlobalMorphologicalNoiser(Noise):
 
         noised_input = list()
         for input_word in input.split():
+            if input_word[0].isupper():
+                # We do not affect proper nouns
+                noised_input.append(input_word)
+                continue
             word = input_word.strip(".,!?").lower()
             if word in self.vocab_map:
                 mapped_word = self.vocab_map[word]
@@ -482,15 +486,15 @@ class GlobalMorphologicalNoiser(Noise):
         '''Record vocab map, number of words switched out'''
 
         if hasattr(self, "output_dir"):
-            with open(f"{self.output_dir}/suffix_map.json", "w") as f:
+            with open(f"{self.output_dir}/morph_suffix_map.json", "w") as f:
                 json.dump(self.suffix_map, f, indent=2, ensure_ascii=False)
             stats = self.get_suffix_map_stats()
-            with open(f"{self.output_dir}/suffix_stats.json", "w") as f:
+            with open(f"{self.output_dir}/morph_suffix_stats.json", "w") as f:
                 json.dump(stats, f, indent=2, ensure_ascii=False)
-            with open(f"{self.output_dir}/vocab_map.json", "w") as f:
+            with open(f"{self.output_dir}/morph_vocab_map.json", "w") as f:
                 json.dump(self.vocab_map, f, indent=2, ensure_ascii=False) 
             stats = self.get_vocab_map_stats()
-            with open(f"{self.output_dir}/vocab_stats.json", "w") as f:
+            with open(f"{self.output_dir}/morph_vocab_stats.json", "w") as f:
                 json.dump(stats, f, indent=2, ensure_ascii=False)
 
             # Record suffix freq

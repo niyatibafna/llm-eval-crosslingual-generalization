@@ -217,6 +217,10 @@ class GlobalPhonologicalNoiser(Noise):
             words = input
         noised_words = list()
         for word in words:
+            if word[0].isupper():
+                # We do not affect proper nouns
+                noised_words.append(word)
+                continue
             noised_word = ""
             if not self.is_valid_word(word):
                 noised_words.append(word)
@@ -298,19 +302,19 @@ class GlobalPhonologicalNoiser(Noise):
         '''Record vocab map, number of words switched out'''
 
         if hasattr(self, "output_dir"):
-            with open(f"{self.output_dir}/source_to_target_set.json", "w") as f:
+            with open(f"{self.output_dir}/phon_source_to_target_set.json", "w") as f:
                 # Serialize
                 source_to_target_set = {source: list(target_set) for source, target_set in self.target_chars.items()}
                 json.dump(source_to_target_set, f, indent=2, ensure_ascii=False)
 
-            with open(f"{self.output_dir}/chargram_map.json", "w") as f:
+            with open(f"{self.output_dir}/phon_chargram_map.json", "w") as f:
                 json.dump(self.chargram_map, f, indent=2, ensure_ascii=False)
             
-            with open(f"{self.output_dir}/vocab_map.json", "w") as f:
+            with open(f"{self.output_dir}/phon_vocab_map.json", "w") as f:
                 json.dump(self.vocab_map, f, indent=2, ensure_ascii=False)
 
             stats = self.get_vocab_chargram_map_stats()
-            with open(f"{self.output_dir}/stats.json", "w") as f:
+            with open(f"{self.output_dir}/phon_stats.json", "w") as f:
                 json.dump(stats, f, indent=2, ensure_ascii=False)
     
     def find_posterior(self, text1, text2):

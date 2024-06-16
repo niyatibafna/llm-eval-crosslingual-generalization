@@ -85,11 +85,74 @@ def apply_noisers(input, noise_classes, verbose = False):
     Returns:
         str, noised text
     '''
+    if len(noise_classes) > 1:
+        return apply_noisers_compose(input, noise_classes, verbose)
+
     for noiser in noise_classes:
         if verbose:
             print(f"Applying noise: {noiser}")
         input = noiser.apply_noise(input)
     return input
+
+def apply_noisers_compose(input, noise_classes, verbose = False):
+    '''Apply noise to input, compose all noisers
+    Args:
+        input: str, input text
+        noise_classes: list, list of noisers
+    Returns:
+        str, noised text
+    '''
+    noise_type_output = dict()
+    for noiser in noise_classes:
+        if verbose:
+            print(f"Applying noise: {noiser}")
+        noise_type_output[noiser.class_name] = noiser.apply_noise(input).split()
+
+        assert len(input.split()) == len(noise_type_output[noiser.class_name])
+
+    print(noise_type_output)
+    
+    # If some kind of noise is not applied, we will add it as the original input
+    for noiser in {"GlobalPhonologicalNoiser", "GlobalLexicalNoiser", "GlobalMorphologicalNoiser"}:
+        if noiser not in noise_type_output:
+            noise_type_output[noiser] = input.split()
+
+    # Now we will compose these outputs
+    ## We assume that the order is phonological, morphological, lexical
+    final_output = list()
+
+    for i, word in enumerate(input.split()):
+        noised_word = word
+        if noise_type_output['GlobalLexicalNoiser'][i] != word:
+            # If lexical noiser has changed the word, we will use that
+            noised_word = noise_type_output['GlobalLexicalNoiser'][i]
+            final_output.append(noised_word)
+            continue
+        # Else we take the phonological noised word
+        noised_word = noise_type_output['GlobalPhonologicalNoiser'][i]
+
+        # If morphological change changed the suffix, we'll apply the new suffix
+        if noise_type_output['GlobalMorphologicalNoiser'][i] != word:
+            morph_noised_word = noise_type_output['GlobalMorphologicalNoiser'][i]
+            ## First let's find the suffix
+            ## The stem is simply the longest shared prefix
+            stem = ""
+            for j in range(min(len(word), len(morph_noised_word))):
+                if word[j] == morph_noised_word[j]:
+                    stem += word[j]
+                else:
+                    break
+            ## The suffix is the remaining part
+            morph_noised_suffix = morph_noised_word[len(stem):]
+
+            phon_noised_stem = noised_word[:len(stem)]
+            noised_word = phon_noised_stem + morph_noised_suffix
+
+            ## All of the above assumes that phon noise preserves the length of the word
+            ## which thankfully it does
+        final_output.append(noised_word)
+
+    return " ".join(final_output)
 
 def record_noiser_artifacts(noise_classes):
     '''Save noiser artifacts to output file

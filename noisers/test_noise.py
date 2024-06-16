@@ -1,5 +1,5 @@
 '''This file is for testing out various noise classes'''
-from main import parse_noise_params, get_noisers, apply_noisers, record_noiser_artifacts
+from main import parse_noise_params, get_noisers, apply_noisers, record_noiser_artifacts, apply_noisers_compose
 import os
 
 # Character Level
@@ -19,32 +19,32 @@ import os
 #     print()
 
 # Testing out lexical noiser with GlobalLexicalNoise
-lang = "fr"
-exp_key = f"lexical-lang={lang},theta_content_global=0.5,theta_func_global=0.8"
-read_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/{lang}/flores200-{lang}-en.txt"
-output_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/noiser_artifacts/test_{exp_key}"
-noise_specs = f"lexical-lang={lang},theta_content_global=0.5,theta_func_global=0.8,text_file=<{read_file}>,output_dir=<{output_file}>"
-all_noise_params = parse_noise_params(noise_specs)
-print(f"Noise Parameters: {all_noise_params}")
+# lang = "fr"
+# exp_key = f"lexical-lang={lang},theta_content_global=0.5,theta_func_global=0.8"
+# read_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/{lang}/flores200-{lang}-en.txt"
+# output_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/noiser_artifacts/test_{exp_key}"
+# noise_specs = f"lexical-lang={lang},theta_content_global=0.5,theta_func_global=0.8,text_file=<{read_file}>,output_dir=<{output_file}>"
+# all_noise_params = parse_noise_params(noise_specs)
+# print(f"Noise Parameters: {all_noise_params}")
 
-noiser_classes = get_noisers(all_noise_params)
-print(f"Noiser Classes: {noiser_classes}")
+# noiser_classes = get_noisers(all_noise_params)
+# print(f"Noiser Classes: {noiser_classes}")
 
-with open(read_file, "r") as f:
-    inputs = f.readlines()[:20]
+# with open(read_file, "r") as f:
+#     inputs = f.readlines()[:20]
 
-output_dir = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/test_noised_outputs/{lang}/"
-os.makedirs(output_dir, exist_ok=True)
-noised_output_file = f"{output_dir}/{exp_key}.txt"
-out = open(noised_output_file, "w")
+# output_dir = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/test_noised_outputs/{lang}/"
+# os.makedirs(output_dir, exist_ok=True)
+# noised_output_file = f"{output_dir}/{exp_key}.txt"
+# out = open(noised_output_file, "w")
 
-for input in inputs:
-    print(f"Input: {input}", file = out)
-    noised = apply_noisers(input, noiser_classes, verbose=False)
-    print(f"Noised: {noised} \n\n", file = out)
-record_noiser_artifacts(noiser_classes)
+# for input in inputs:
+#     print(f"Input: {input}", file = out)
+#     noised = apply_noisers(input, noiser_classes, verbose=False)
+#     print(f"Noised: {noised} \n\n", file = out)
+# record_noiser_artifacts(noiser_classes)
 
-out.close()
+# out.close()
 
 # Phonological
 # lang = "fr"
@@ -185,3 +185,37 @@ out.close()
 #     record_noiser_artifacts(noiser_classes)
 
 # out.close()
+
+# Composite noise
+## We'll apply lexical, phonological, and morphological noise
+
+lang = "de"
+exp_key = f"composite_deu_dan"
+read_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/{lang}/flores200-{lang}-en.txt"
+output_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/noiser_artifacts/test_{exp_key}"
+noise_specs = f"lexical-lang={lang},theta_content_global=0.5,theta_func_global=0.98,text_file=<{read_file}>;\
+morph-lang={lang},theta_morph_global=0.71,text_file=<{read_file}>;\
+phonological-lang={lang},theta_phon=0.1,text_file=<{read_file}>"
+all_noise_params = parse_noise_params(noise_specs)
+print(f"Noise Parameters: {all_noise_params}")
+
+noiser_classes = get_noisers(all_noise_params)
+print(f"Noiser Classes: {noiser_classes}")
+
+read_file = "/export/b08/nbafna1/data/flores200_dataset/devtest/deu_Latn.devtest"
+with open(read_file, "r") as f:
+    inputs = f.readlines()[:20]
+
+output_dir = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/noisers/test_noised_outputs/{lang}/"
+os.makedirs(output_dir, exist_ok=True)
+noised_output_file = f"{output_dir}/{exp_key}.txt"
+out = open(noised_output_file, "w")
+
+for input in inputs:
+    print(f"Input: {input}", file = out)
+    # noised = apply_noisers(input, noiser_classes, verbose=False)
+    noised = apply_noisers_compose(input, noiser_classes, verbose=False)
+    print(f"Noised: {noised} \n\n", file = out)
+# record_noiser_artifacts(noiser_classes)
+
+out.close()

@@ -17,7 +17,7 @@ We do the second of these. First we compute phonological change, then morphologi
 and finally lexical change. Lexical change is only counted for words that are not affected
 by the other types of change.
 '''
-debug = False
+debug = True
 debug_phon = False
 
 import json
@@ -361,6 +361,94 @@ class Posterior:
         theta_morph /= observed_suffixes
 
         return theta_morph
+
+    def post_morphological_noiser_archive(self):
+        '''
+        Find theta_morph i.e. the proportion of the top k suffixes that are new.
+        We do this in the following way:
+        1. Find the top k suffixes in the target language (do this in the same way that we do it
+            in the noiser - i.e. list the top string suffixes and then find the top k in a language specific
+            way)
+        2. For every source word, do the following for all suffixes that lie in our suffix list
+        3. Check if the target word has the same "stem". We do this by checking if the
+            src and tgt have some non-trivial shared prefix (let's say length 2 or 33% of the length of the
+            word). If they do, then we say that the stem is the same. We can also use NED,
+            but this might be more noisy.
+        4. In this case, check if the suffix is the same. If not, then we have a change.
+        5. Note that we make this count several times per suffix, and we finally take an average for a given
+            suffix to decide whether it was changed or not (i.e. we'll get something like 0.3 for a suffix)
+        6. We then take the top k suffixes and find the average of the proportion of times they were changed
+            to get theta_morph.
+        '''
+
+        # Collect all suffixes
+        src_suffix_freq = self.get_suffix_frequency(self.src_vocab)
+
+        # Filter top k suffixes
+        src_suffix_freq = self.filter_suffix_topk(src_suffix_freq)
+        if debug:
+            print(f"Resulting suffix freq: ")
+            print(*src_suffix_freq.items(), sep="\n")
+
+        # Find the proportion of times the suffix was changed
+        suffix_changes = defaultdict(lambda: 0)
+        suffix_counts = defaultdict(lambda: 0)
+        lexical_change_per_suffix = defaultdict(lambda: 0)
+        for (src, tgt) in self.bil_lexicon:
+            for i in range(1, round(len(src)/2) + 1): # When we do this, we are basically saying that the word
+                # exhibits *all* suffixes that it has. 
+                # This is probably unlikely, but it's okay because we're checking whether the suffix belongs
+                # in our collected list, which hopefully only has linguistic suffixes
+                src_suffix = src[-i:]
+                if src_suffix in src_suffix_freq:
+                    
+                    if debug:
+                        print(f"Source: {src}, Target: {tgt}, Suffix: {src_suffix}")
+                    # Now we'll check whether source and target have the same stem
+                    if not self.same_stem(src, tgt):
+                        if debug:
+                            print(f"Source and target don't have the same stem")
+                        lexical_change_per_suffix[src_suffix] += 1
+                        continue
+                    suffix_counts[src_suffix] += 1
+                    if tgt[-i:] != src[-i:]:
+                        if debug:
+                            print(f"Suffix changed")
+                        suffix_changes[src_suffix] += 1
+
+        lexical_change_per_suffix = {suffix: lexical_change_per_suffix[suffix]*self.theta_content \
+                                      for suffix in lexical_change_per_suffix}
+        lexical_change_per_suffix = defaultdict(lambda: 0, lexical_change_per_suffix)
+        suffix_counts = {suffix: suffix_counts[suffix] + lexical_change_per_suffix[suffix] \
+                            for suffix in suffix_counts}
+        suffix_counts = defaultdict(lambda: 0, suffix_counts)
+        # Find the proportion of times the suffix was changed
+        ##### REESTIMATE THETA_MORPH BASED ON THETA_CONTENT!!! #####
+        theta_morph = 0
+        for suffix in src_suffix_freq:
+            if suffix_counts[suffix] == 0:
+                continue
+            theta_morph_suffix = suffix_changes[suffix]/(suffix_counts[suffix] - lexical_change_per_suffix[suffix])
+
+            # Words affected by lexical change could have originally been affected by morph change
+            expected_morph_change = lexical_change_per_suffix[suffix]*theta_morph_suffix
+
+            theta_morph_suffix = (suffix_changes[suffix] + expected_morph_change)/(suffix_counts[suffix])
+            theta_morph += theta_morph_suffix
+
+        if debug:
+            print(f"Suffix changes: {suffix_changes}")
+            print(f"Suffix counts: {suffix_counts}")
+            print(f"Lexical change per suffix: {lexical_change_per_suffix}")
+            print(f"Theta morph: {theta_morph}")
+        
+        observed_suffixes = len([suffix for suffix in src_suffix_freq if suffix_counts[suffix] > 0])
+        if debug:
+            print(f"Observed suffixes: {observed_suffixes}")
+            print(f"Total suffixes: {len(src_suffix_freq)}")
+        theta_morph /= observed_suffixes
+
+        return theta_morph
         
 
 hin_langs = ["bho", "mag", "mai", "hne", "awa"]
@@ -390,10 +478,11 @@ posteriors = defaultdict(lambda: dict())
 
 for src_lang in related_lrls:
     for tgt_lang in sorted(list(related_lrls[src_lang])):
-        # if src_lang not in {"deu"}:
-        #     continue
+        if src_lang not in {"hin"} or tgt_lang not in {"mai", "hne"}:
+            continue
         print(f"Source language: {src_lang}, Target language: {tgt_lang}")
-        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons_raw/{src_lang}_{tgt_lang}.json"
+        bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/flores_lexicons/{src_lang}_{tgt_lang}.json"
+        # bil_lexicon_json_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/posteriors/google_translate_lexicons/{src_lang}_{tgt_lang}.json"
         src_text_file = f"/export/b08/nbafna1/projects/llm-robustness-to-xlingual-noise/datasets/{iso3_to_iso2[src_lang]}/mmlu_{iso3_to_iso2[src_lang]}.txt"
         
         post = Posterior(src_lang, bil_lexicon_json_file, src_text_file)

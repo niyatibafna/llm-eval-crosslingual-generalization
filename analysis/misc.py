@@ -43,8 +43,8 @@ print(*res_theta, sep='\n')
 
 #ARABIC
 print(f"ARABIC:")
-baseline = 56.44
-res='''55.32
+baseline = 55.32
+res='''24.17
 46.76
 43.55
 38.25
@@ -52,14 +52,14 @@ res='''55.32
 48.36
 50.16
 33.05'''
-theta = '''0.16
-0.17
-0.25
-0.29
-0.41
-0.01
-0.39
-0.27'''
+theta = '''0.09
+0.06
+0.2
+0.21
+0.21
+0.02
+0.32
+0.19'''
 
 res = [float(x) for x in res.split('\n')]
 theta = [float(x) for x in theta.split('\n')]

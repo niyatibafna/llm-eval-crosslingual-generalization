@@ -1,7 +1,7 @@
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 
-out_filename = "plots/main_results.pdf"
+out_filename = "plots/main_results_w_arb.pdf"
 def parse_excel_table_into_results(lang_results, all_noise_param_ranges, tasks = ['X->eng', 'XNLI', 'XStoryCloze']):
     results_lang_all_noisers = {}
     for noise_type, str_results in lang_results.items():
@@ -624,7 +624,16 @@ posteriors_str = '''0	0	0	0
 0	0	0	0
 0.5	0.98	0.71	0.1
 0.75	0.99	0.68	0.15
-0.56	0.99	0.7	0.1'''
+0.56	0.99	0.7	0.1
+0	0	0	0
+0.09	0.32	0.08	0.03
+0.06	0.25	0.04	0.04
+0.2	0.43	0.11	0.05
+0.21	0.55	0.15	0.04
+0.21	0.64	0.18	0.04
+0.02	0.02	0.01	0.05
+0.32	0.6	0.12	0.03
+0.19	0.5	0.1	0.04'''
 
 degradations = '''0
 34.39
@@ -641,7 +650,16 @@ degradations = '''0
 0.00
 60.32
 90.04
-59.52'''
+59.52
+0
+56.31
+15.47
+21.28
+30.86
+19.72
+12.58
+9.33
+40.26'''
 
 langs_real_points = '''hin
 awa
@@ -658,7 +676,16 @@ oci
 deu
 dan
 isl
-swe'''
+swe
+arb
+acm
+acq
+aeb
+ajp
+apc
+ars
+ary
+arz'''
 
 posteriors = [(float(x), float(y), float(z), float(w)) \
               for x, y, z, w in [line.split() for line in posteriors_str.split("\n")]]

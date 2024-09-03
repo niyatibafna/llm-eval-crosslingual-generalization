@@ -33,3 +33,5 @@ posteriors/google_translate_lexicons/*
 posteriors/morph_temp.txt
 posteriors/morph_text.txt
 posteriors/logs/fra_post.txt
+analysis/qualitative_analysis/samples/*
+analysis/qualitative_analysis/create_sample.py

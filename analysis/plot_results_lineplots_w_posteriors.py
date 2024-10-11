@@ -1,7 +1,7 @@
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 
-out_filename = "plots/main_results_w_arb.pdf"
+out_filename = "plots/main_results_new.pdf"
 def parse_excel_table_into_results(lang_results, all_noise_param_ranges, tasks = ['X->eng', 'XNLI', 'XStoryCloze']):
     results_lang_all_noisers = {}
     for noise_type, str_results in lang_results.items():
@@ -160,27 +160,32 @@ def plot_results(results, tasks, curr_noisers, \
                 X = [0] + X
                 Y = [0] + Y
 
-            # Plot regression line with X and Y
-            m, b = np.polyfit(X, Y, 1)
-            ax.plot(X, [m*x + b for x in X], color = "black", linestyle = "--", linewidth = 2)
-
             # Plot the mean
             ax.scatter(X, Y, label = "mean", marker = "o", s = 15, color = "black")
 
+            # Plot regression line with X and Y
+            m, b = np.polyfit(X, Y, 1)
+            ax.plot(X, [m*x + b for x in X], color = "black", linestyle = "--", linewidth = 2, label = r"$\psi^n$")
 
-            ax.legend()
-
-            ax.set_title(f"({title_noise_type_to_idx[noise_type]}{title_task_to_idx[task]}) {task} , {title_noise_type[noise_type]}")
+            title_task = task if task != "X->eng" else r"X$\rightarrow$eng"
+            ax.set_title(f"({title_noise_type_to_idx[noise_type]}{title_task_to_idx[task]}) {title_task} , {title_noise_type[noise_type]}")
             ax.set_xlabel(xlabels[noise_type])
             ax.set_ylabel("Performance Degradation (%)")
-            xticks = list([x/10 for x in range(11)])
+            if noise_type == "phonological":
+                xticks = list([x/10 for x in range(4)])
+                ax.set_xlim(-0.1, 0.5)
+            elif task == "X->eng":
+                xticks = list([x/10 for x in range(11)])
+                ax.set_xlim(-0.1, 1.4)
+            else:
+                xticks = list([x/10 for x in range(11)])
+                ax.set_xlim(-0.1, 1.1)
             yticks = list([y*10 for y in range(11)])
             ax.set_yticks(yticks)
             ax.set_yticklabels([str(y) for y in yticks])
             ax.set_xticks(xticks)
             ax.set_xticklabels(xticks)
-            ax.set_xlim(-0.1, 1.1)
-
+            
 
             # Now we plot the real language results
             if noise_type_real_points is not None and task in noise_type_real_points:
@@ -193,6 +198,9 @@ def plot_results(results, tasks, curr_noisers, \
                     # Choose a different colour for the real language points
                     ax.scatter(x, y, color = "purple", s = point_size, marker = '^')
 
+                # Manually add the legend for the real language points
+                ax.scatter([], [], color = "purple", s = point_size, marker = '^', label = "CRLs")
+
                 # Plot a red dotted regression line for the real language points
                 X = [x for lang, x, y in noise_type_real_points[task][noise_type]]
                 Y = [y for lang, x, y in noise_type_real_points[task][noise_type]]
@@ -200,16 +208,15 @@ def plot_results(results, tasks, curr_noisers, \
                 if all([y == 0 for y in Y]):
                     continue
 
-                if noise_type == 'lexical_f0.5':
+                if noise_type in {'lexical_f0.5', 'lexical_f0'}:
+                    ax.legend()
                     continue
 
                 m, b = np.polyfit(X, Y, 1)
-                ax.plot(X, [m*x + b for x in X], color = "red", linestyle = "--", linewidth = 1)
+                ax.plot(X, [m*x + b for x in X], color = "red", linestyle = "--", linewidth = 1, label = r"$\psi^{real}$")
+
+            ax.legend()
                     
-
-
-                    
-
 
     plt.tight_layout()  # Adjust subplots to fit into figure area.
     plt.savefig(out_filename)
